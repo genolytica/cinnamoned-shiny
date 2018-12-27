@@ -1,4 +1,4 @@
-# cinnamoned2
+# cinnamoned
 geometriCally INvariant NormAlization of MetabOlomic kidNEy Data remastered!
 
 ### Porting of the cINNaMoneD application to shiny!

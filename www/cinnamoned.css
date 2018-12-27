@@ -1,0 +1,15 @@
+body {
+    background-color: #FBD099;
+    color: #A33307; 
+    text-decoration: none;
+    margin: 0px;
+}
+
+
+.page-title {  
+    font-size: 1.3em;
+    color: #A33307;
+    letter-spacing: 2px;
+    text-align:center;
+    margin-top: 40px;
+}
