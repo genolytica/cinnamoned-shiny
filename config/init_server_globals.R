@@ -1,4 +1,4 @@
-# Intit globals (don't want to laod these everytime a user connects and they 
+# Init globals (don't want to laod these everytime a user connects and they 
 # don't take much time to load)
 
 # Load basic packages
@@ -21,3 +21,10 @@ baseColours <- c("#B40000","#00B400","#0000B4","#B45200","#9B59B6","#21BCBF",
 
 # Restrict the number of cores dedicated to cinnamoned2
 RC <- 0.25
+
+# Error messages
+errorMessages <- list(
+    filterTimeMin="Minimum time must be an integer greater than 0!",
+    filterTimeMax="Maximum time must be an integer greater than 0!",
+    xcmsSNR="Signal to noise ratio must be a real number greater than 0!"
+)

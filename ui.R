@@ -6,6 +6,7 @@ require(shinythemes)
 
 source("config/init_server_globals.R")
 source("ui/analysisTab/analysisItem.R")
+source("ui/runViewerTab/runViewerItem.R")
 source("ui/databaseTab/databaseItem.R")
 
 shinyUI(fluidPage(
@@ -35,9 +36,12 @@ shinyUI(fluidPage(
     )),
     navbarPage(
         id="cinamnavbar",
-        title="cinnamoned2",
-        tabPanel("Analysis",icon=icon("flask"),
+        title="cinnamoned",
+        tabPanel("New analysis",icon=icon("flask"),
             analysisTabPanel()
+        ),
+        tabPanel("Analysis viewer",icon=icon("eye"),
+            runViewerTabPanel()
         ),
         navbarMenu("Database",icon=icon("database"),
             tabPanel("Manage",icon=icon("eye"),
@@ -48,7 +52,7 @@ shinyUI(fluidPage(
             tabPanel("Search",icon=icon("search")
             )
         ),
-        tabPanel("About",icon=icon("user")
+        tabPanel("About",icon=icon("info")
         )
     )
 ))

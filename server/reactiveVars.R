@@ -1,19 +1,30 @@
 # All the reactive variables exchanged throughout the application are initiated
 # here. More will be added during porting...
 initReactiveVars <- function() {
-    timeFilter <- reactiveValues(
+    reactiveVars <- new.env(parent=emptyenv())
+    
+    reactiveVars$pipelineControl <- reactiveValues(
+        step="preprocess",
+        #step="timefilter"
+        #step="normalization"
+        isRunning=FALSE,
+        filesUploaded=FALSE,
+        uiError=FALSE
+    )
+    
+    reactiveVars$timeFilter <- reactiveValues(
         do=TRUE,
         min=600,
         max=3000
     )
     
-    readSpec <- reactiveValues(
+    reactiveVars$readSpec <- reactiveValues(
         nSlaves=1,
         profstep=1,
         profmethod="binlin"
     )
     
-    findPeaks <- reactiveValues(
+    reactiveVars$findPeaks <- reactiveValues(
         method=c("matchedFilter","centWave"),
         fwhm=30,
         sigma=7,
@@ -35,7 +46,7 @@ initReactiveVars <- function() {
         sleep=0
     )
     
-    groupPeaks <- reactiveValues(
+    reactiveVars$groupPeaks <- reactiveValues(
         method=c("density","mzClust","nearest"),
         bw=c(50,30,20,10,5),
         mzwid=0.25,
@@ -51,7 +62,7 @@ initReactiveVars <- function() {
         sleep=0
     )
     
-    retcor <- reactiveValues(
+    reactiveVars$retcor <- reactiveValues(
         method=c("loess","obiwarp"),
         missing=1,
         extra=1,
@@ -73,13 +84,13 @@ initReactiveVars <- function() {
         ty=NULL
     )
     
-    extractPeaks <- reactiveValues(
+    reactiveVars$extractPeaks <- reactiveValues(
         method="maxint",
         value="into",
         intensity="into"
     )
     
-    annotatePeaks <- reactiveValues(
+    reactiveVars$annotatePeaks <- reactiveValues(
         group="both",
         iso.flow="fwhm",
         sigma=6,
@@ -106,23 +117,77 @@ initReactiveVars <- function() {
         export.what="all"
     )
     
-    spectrePlots <- reactiveValues(
+    reactiveVars$spectrePlots <- reactiveValues(
         spectreProfile=ggmessage("Spectre profiles will\nbe displayed here"),
         rendered=TRUE
     )
     
-    currentTables <- reactiveValues()
+    reactiveVars$currentTables <- reactiveValues()
     
-    return(list(
-        timeFilter=timeFilter,
-        readSpec=readSpec,
-        findPeaks=findPeaks,
-        groupPeaks=groupPeaks,
-        retcor=retcor,
-        extractPeaks=extractPeaks,
-        annotatePeaks=annotatePeaks,
-        spectrePlots=spectrePlots
-    ))
+    reactiveVars$reset <- function(which=c("all","preprocess","timefilter",
+        "normalization")) {
+        
+        # Not much checking as the function is internal 
+        switch(which,
+            all = {
+                reactiveVars$resetAll()
+            },
+            preprocess = {
+                reactiveVars$resetPreprocess()
+            },
+            timefilter = {
+                reactiveVars$resetTimefilter()
+            },
+            normalization = {
+                reactiveVars$resetNormalization()
+            }
+        )
+    }
+    
+    reactiveVars$resetAll <- function() {
+        # Those with a supporting function
+        reactiveVars$resetPreprocess()
+        reactiveVars$resetTimefilter()
+        reactiveVars$resetNormalization()
+        
+        # And the rest
+         reactiveVars$spectrePlots <- reactiveValues(
+            spectreProfile=ggmessage(
+                "Spectre profiles will\nbe displayed here"),
+            rendered=TRUE
+        )
+        # TODO: Fill the rest please
+    }
+    
+    reactiveVars$resetPreprocess <- function() {
+        # Reset readSpec, findPeaks, uploadedFiles
+        # TODO: Fill the function
+    }
+
+    reactiveVars$resetTimefilter <- function() {
+        # Reset timeFilter
+        reactiveVars$timeFilter$do <- TRUE
+        reactiveVars$timeFilter$min <- 600
+        reactiveVars$timeFilter$max <- 3000
+    }
+
+    reactiveVars$resetNormalization <- function() {
+        # Reset groupPeaks, retcor, extractPeaks, annotatePeaks
+        # TODO: Fill the function
+    }
+    
+    #return(list(
+    #    pipelineControl=pipelineControl,
+    #    timeFilter=timeFilter,
+    #    readSpec=readSpec,
+    #    findPeaks=findPeaks,
+    #    groupPeaks=groupPeaks,
+    #    retcor=retcor,
+    #    extractPeaks=extractPeaks,
+    #    annotatePeaks=annotatePeaks,
+    #    spectrePlots=spectrePlots
+    #))
+    return(reactiveVars)
 }
 
 initReactiveMsgs <- function() {
@@ -131,7 +196,7 @@ initReactiveMsgs <- function() {
             list(
                 type="INFO",
                 msg=paste(getTime("INFO"),"Welcome to the analysis panel of ",
-                    "cinnamoned2! This is an info message. Make your ",
+                    "cinnamoned! This is an info message. Make your ",
                     "selections on the left.")
             )
         )
@@ -140,16 +205,6 @@ initReactiveMsgs <- function() {
     return(list(
         analysisMessages=analysisMessages
     ))
-}
-
-resetReactiveVars <- function(allReactiveVars) {
-    allReactiveVars$timeFilter$do <- TRUE
-    allReactiveVars$timeFilter$min <- 600
-    allReactiveVars$timeFilter$max <- 3000
-    
-    # Fill the rest please...
-    
-    return(allReactiveVars)
 }
 
 ggmessage <- function(msg="",type=c("generic","info","success","warning",
