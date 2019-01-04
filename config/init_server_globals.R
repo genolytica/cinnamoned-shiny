@@ -24,7 +24,15 @@ RC <- 0.25
 
 # Error messages
 errorMessages <- list(
+    projectName=paste("The project name must be smaller than 100", 
+        "characters and cannot contain the special characters",
+        "\ / @ # $ & * ` ! ( ) % ^ , . < > ? | ' ; [ ] \" or space"),
     filterTimeMin="Minimum time must be an integer greater than 0!",
     filterTimeMax="Maximum time must be an integer greater than 0!",
     xcmsSNR="Signal to noise ratio must be a real number greater than 0!"
 )
+
+# Maximum filesize
+options(shiny.maxRequestSize=10*1024^3)
+
+LOADED <- FALSE

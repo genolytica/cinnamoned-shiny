@@ -7,9 +7,23 @@ initReactiveVars <- function() {
         step="preprocess",
         #step="timefilter"
         #step="normalization"
+        #step="result"
         isRunning=FALSE,
         filesUploaded=FALSE,
-        uiError=FALSE
+        sampleInfoFilled=FALSE,
+        uiError=FALSE,
+        basePath="/media/HD3/cprocess",
+        tmpPath="/media/HD3/ctmp"
+    )
+    
+    reactiveVars$pipelineInput <- reactiveValues(
+        basePath="/media/HD3/cprocess",
+        tmpPath="/media/HD3/ctmp",
+        uploadedFiles=NULL,
+        sampleInfoFile=NULL,
+        currentRunId=NULL,
+        filenames=NULL,
+        classes=NULL
     )
     
     reactiveVars$timeFilter <- reactiveValues(
@@ -122,7 +136,9 @@ initReactiveVars <- function() {
         rendered=TRUE
     )
     
-    reactiveVars$currentTables <- reactiveValues()
+    reactiveVars$simpleTables <- reactiveValues(
+        sampleTable=NULL
+    )
     
     reactiveVars$reset <- function(which=c("all","preprocess","timefilter",
         "normalization")) {
@@ -240,5 +256,12 @@ ggmessage <- function(msg="",type=c("generic","info","success","warning",
                 panel.grid.minor=element_blank(),
                 plot.background=element_blank()
             )
+    )
+}
+
+disableActionButton <- function(id,session) {
+    session$sendCustomMessage(
+        type="jsCode",
+        list(code=paste("$('#",id,"').prop('disabled',true)",sep=""))
     )
 }

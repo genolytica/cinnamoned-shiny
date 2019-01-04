@@ -1,0 +1,37 @@
+aboutTabPanel <- function() {
+    fluidRow(column(12,
+        h3("About CINNAMONED"),
+        p(paste(
+            "cINNaMoneD is a web-based application, which performs peak",
+             "detection, noise filtering, retention time alignment and",
+             "intensity normalization in one ore more samples of CE/MS data,",
+             "coming from urine derived from human patients with a variety of",
+             "renal diseases. Each of the above steps is performed per sample.",
+             "The procedure starts by peak detection using the matchedFilter",
+             "algorithm of the Bioconductor package "),
+             a("xcms",
+             href="https://bioconductor.org/packages/release/bioc/html/xcms.html",
+                target="_blank"),
+             a("(Smith et al., 2006)",
+                href="http://www.ncbi.nlm.nih.gov/pubmed/16448051",
+                target="_blank"),".",
+             paste("Then for each sample, the detected masses are matched to",
+             "a reference dataset, consisting of 6044 mz/retention time pairs,",
+             "derived from 75 CE/MS urine samples including control and",
+             " healthy samples as well as samples extracted from a variety",
+             "of renal diseases. The matched mz pairs between new samples",
+             "and the reference dataset, contain a subset of invariant mz",
+             "values across most reference samples. These invariant",
+             "mz/retention time pairs are used for the time alignment of the",
+             "new samples to the reference dataset, as wel as for intensity",
+             "scaling so that the new samples become comparable with the",
+             "reference dataset and among themselves. The time alignment is",
+             "based on a clustering procedure along the matched invariant",
+             "entities coupled with local regression and the intensity scaling",
+             "is performed using a local regression curve constructed using",
+             "the intensity of the invariant entities and e reference sample",
+             "which is the weighted mean of the matched mz/retention time",
+             "pairs from the reference dataset.")
+        )
+    ))
+}

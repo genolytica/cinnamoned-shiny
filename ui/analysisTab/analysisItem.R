@@ -1,4 +1,25 @@
 analysisTabPanel <- function() {
+    fluidRow(
+        conditionalPanel(
+            condition="output.panelStatus=='preprocess'",
+            analysisTabPanelPreprocess()
+        ),
+        conditionalPanel(
+            condition="output.panelStatus=='timefilter'",
+            analysisTabPanelTimefilter()
+        ),
+        conditionalPanel(
+            condition="output.panelStatus=='normalization'",
+            analysisTabPanelNormalization()
+        ),
+        conditionalPanel(
+            condition="output.panelStatus=='result'",
+            analysisTabPanelResult()
+        )
+    )
+}
+
+analysisTabPanelPreprocess <- function() {
     fluidRow(column(5,
         fluidRow(column(12,
             wellPanel(
@@ -10,7 +31,9 @@ analysisTabPanel <- function() {
                         label="Project name (100 chars max)",
                         value="",
                         placeholder="Project name"
-                    )
+                    ),
+                    div(id="projectNameError",class="input-error",
+                        errorMessages$projectName)
                 )),
                 fluidRow(column(12,
                     fileInput(
@@ -67,9 +90,50 @@ analysisTabPanel <- function() {
             wellPanel(
                 h4("Sample(s) information"),
                 hr(),
+                fluidRow(column(12,
+                    fileInput(
+                        inputId="sampleInfoFile", 
+                        label="Upload sample-class relationship file",
+                        accept=c("text/*")
+                    )
+                )),
+                fluidRow(column(12,
+                    div(
+                        style="font-weight:bold; font-size:1.1em",
+                        "OR"
+                    )
+                )),
+                fluidRow(column(12,
+                    p(
+                        
+                        paste("Manually enter sample-class information ",
+                            "(after file upload)",sep="")
+                    )
+                )),
+                fluidRow(column(6,
+                    div(
+                        style=paste("font-weight:bold;",
+                            "border-style: none none dashed none;",
+                            "border-width: 2px;"),
+                        "Filename"
+                    )
+                ),column(6,
+                    div(
+                        style=paste("font-weight:bold;",
+                            "border-style: none none dashed none;",
+                            "border-width: 2px;"),
+                        "Class"
+                    )
+                )),
+                fluidRow(column(12,
+                    div(class="small",
+                        htmlOutput("sampleInfoEdit")
+                    )
+                )),
                 class="well-panel"
             )
-        )),
+        ))
+    ),column(7,
         fluidRow(column(12,
             wellPanel(
                 h4("Peak detection parameters"),
@@ -116,7 +180,7 @@ analysisTabPanel <- function() {
                         tabPanel(
                             fluidRow(br()),
                             title="Peak detection",
-                            fluidRow(column(6,
+                            fluidRow(column(4,
                                 textInput(
                                     inputId="xcmsSNR", 
                                     label="Signal-to-noise ratio", 
@@ -124,33 +188,32 @@ analysisTabPanel <- function() {
                                 ),
                                 div(id="xcmsSNRError",class="input-error",
                                     errorMessages$xcmsSNR)
-                            ),column(6,
+                            ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCSize", 
                                     label="EIBPC step size", 
                                     value="0.1"
                                 )
-                            )),
-                            fluidRow(column(6,
+                            ),column(4,
                                 textInput(
                                     inputId="xcmsFWHM", 
                                     label="Full width at half maximum", 
                                     value="30"
                                 )
-                            ),column(6,
+                            )),
+                            fluidRow(column(4,
                                 textInput(
                                     inputId="xcmsSigma", 
                                     label="Peak model standard deviation", 
                                     value="7"
                                 )
-                            )),
-                            fluidRow(column(6,
+                            ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCSteps", 
                                     label="EIBPC combine steps", 
                                     value="3"
                                 )
-                            ),column(6,
+                            ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCMaxPeaks", 
                                     label="Maximum peaks per EIBPC", 
@@ -162,32 +225,31 @@ analysisTabPanel <- function() {
                 ),
                 fluidRow(br()),
                 fluidRow(column(6,
-                     div(
-                         class="pull-left",
-                         style="display:inline-block",
-                         actionButton(
+                    div(
+                        class="pull-left",
+                        style="display:inline-block",
+                        actionButton(
                             inputId="resetPreprocessing",
                             label="Reset",
                             icon=icon("undo")
                         )
-                     )
+                    )
                 ),column(2," "
                 ),column(6,
-                     div(
-                         class="pull-right",
-                         style="display:inline-block",
-                         actionButton(
+                    div(
+                        class="pull-right",
+                        style="display:inline-block",
+                        disabled(actionButton(
                             inputId="runPreprocessing",
                             label="Engage!",
                             icon=icon("rocket"),
                             class="btn-primary"
-                        )
-                     )
+                       ))
+                    )
                 )),
                 class="well-panel"
             )
-        ))
-    ),column(7,
+        )),
         fluidRow(column(12,
             wellPanel(
                 h4("Analysis progress"),
@@ -196,5 +258,23 @@ analysisTabPanel <- function() {
                 class="well-panel"
             )
         ))
+    ))
+}
+
+analysisTabPanelTimefilter <- function() {
+    fluidRow(column(12,
+        h1("Timefilter page")
+    ))
+}
+
+analysisTabPanelNormalization <- function() {
+    fluidRow(column(12,
+        h1("Normalization page")
+    ))
+}
+
+analysisTabPanelResult <- function() {
+    fluidRow(column(12,
+        h1("Result page")
     ))
 }

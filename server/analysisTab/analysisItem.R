@@ -12,6 +12,18 @@ analysisTabPanelEventReactive <- function(input,output,session,
         
         # Test the button
         pipelineControl$isRunning <- TRUE
+        
+        # 1. Create the directory structure
+        # 2. Move the uploaded files to where the pipeline expects
+        # 3. Create the sample info file from the respective inputs
+        # 3. Write a JSON (not YAML anymore) configuration file
+        # 4. Run xcmsPipeline.R
+        
+        # Pipeline completed hopefully
+        # pipelineControl$isRunning <- FALSE
+        
+        # Switch to timefilter status so that the UI can be rendered
+        # pipelineControl$step <- "timefilter" # Works! Tested.
     })
     
     resetPreprocess <- eventReactive(input$resetPreprocessing,{
@@ -42,11 +54,27 @@ analysisTabPanelEventReactive <- function(input,output,session,
 analysisTabPanelReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
     pipelineControl <- allReactiveVars$pipelineControl
+    pipelineInput <- allReactiveVars$pipelineInput
     timeFilter <- allReactiveVars$timeFilter
     readSpec <- allReactiveVars$readSpec
     findPeaks <- allReactiveVars$findPeaks
     
     # Validators
+    validateProjectName <- reactive({
+        n <- as.character(input$projectName)
+        if (is.character(n)) {
+            v <- grep("[!@#$%^&*\\\\()+\\/\"'<>,.;:|\\[\\]{}\\s]",n,perl=TRUE)
+            if (length(v) > 0 || nchar(n) > 100) {
+                pipelineControl$uiError <- TRUE
+                return(TRUE)
+            }
+            else {
+                pipelineControl$uiError <- FALSE
+                return(FALSE)
+            }
+        }
+        
+    })
     validateTimeFilterMin <- reactive({
         tMin <- as.numeric(input$filterTimeMin)
         if (tMin < 0 || is.na(tMin)) {
@@ -85,16 +113,44 @@ analysisTabPanelReactive <- function(input,output,session,
     })
     #TODO: All the rest validators
     
+    # Uploaded files
+    uploadFiles <- reactive({
+        if (!is.null(input$projectFiles)) {
+            pipelineInput$uploadedFiles <- input$projectFiles$datapath
+            pipelineInput$filenames <- input$projectFiles$name
+            pipelineControl$filesUploaded <- TRUE
+        }
+    })
+    
+    # Conditional panel status according to analysis status
+    output$panelStatus <- reactive({
+        switch(pipelineControl$step,
+            preprocess = {
+                return("preprocess")
+            },
+            timefilter = {
+                return("timefilter")
+            },
+            normalization = {
+                return("normalization")
+            }
+        )
+    })
+    outputOptions(output,"panelStatus",suspendWhenHidden=FALSE)
+    
     return(list(
+        validateProjectName=validateProjectName,
         validateTimeFilterMin=validateTimeFilterMin,
         validateTimeFilterMax=validateTimeFilterMax,
-        validateXcmsSNR=validateXcmsSNR
+        validateXcmsSNR=validateXcmsSNR,
+        uploadFiles=uploadFiles
     ))
 }
 
 analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
     pipelineControl <- allReactiveVars$pipelineControl
+    pipelineInput <- allReactiveVars$pipelineInput
         
     output$analysisProgress <- renderUI({
         switch(pipelineControl$step,
@@ -117,6 +173,27 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
             }
         )
     })
+    
+    # Filenames and classes
+    output$sampleInfoEdit <- renderUI({
+        if (!is.null(pipelineInput$filenames)) {
+            lapply(1:length(pipelineInput$filenames),function(i,n) {
+                fluidRow(column(6,
+                    disabled(textInput(
+                        inputId=paste("sampleName_",i,sep=""),
+                        value=n[i],
+                        label=""
+                    ))
+                ),column(6,
+                    textInput(
+                        inputId=paste("className_",i,sep=""),
+                        placeholder="Enter class name",
+                        label=""
+                    )
+                ))
+            },pipelineInput$filenames)
+        }
+    })
 }
 
 analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
@@ -135,7 +212,9 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     analysisTabPanelReactiveExprs <- 
         analysisTabPanelReactive(input,output,session,allReactiveVars,
             allReactiveMsgs)
-            
+        
+    validateProjectName <- 
+        analysisTabPanelReactiveExprs$validateProjectName
     validateTimeFilterMin <- 
         analysisTabPanelReactiveExprs$validateTimeFilterMin
     validateTimeFilterMax <- 
@@ -144,12 +223,24 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         analysisTabPanelReactiveExprs$validateXcmsSNR
     #TODO: Retrieve all the rest fields defined in analysisTabPanelReactive
     
+    uploadFiles <- analysisTabPanelReactiveExprs$uploadFiles
+    
     # Initialize UI element reactivity  
     analysisTabPanelRenderUI(output,session,allReactiveVars,allReactiveMsgs)
     
     # Set the observers
     # Validators
     observe({
+        if (validateProjectName())
+            shinyjs::show("projectNameError")
+        else
+            shinyjs::hide("projectNameError")
+            
+        if (validateTimeFilterMax())
+            shinyjs::show("filterTimeMaxError")
+        else
+            shinyjs::hide("filterTimeMaxError")
+        
         if (validateTimeFilterMin())
             shinyjs::show("filterTimeMinError")
         else
@@ -168,12 +259,17 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         # TODO: All the rest validators
     })
     
-    # If a validator fails, disable the run button
+    # If a validator fails or requirements not met, disable the run button
     observe({
-        if (pipelineControl$uiError)
+        if (pipelineControl$uiError || !pipelineControl$filesUploaded)
             shinyjs::disable("runPreprocessing")
         else
             shinyjs::enable("runPreprocessing")
+    })
+    
+    # File upload
+    observe({
+        uploadFiles()
     })
     
     # Act when the run button is pressed
