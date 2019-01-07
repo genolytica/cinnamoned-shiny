@@ -1,22 +1,22 @@
 aboutTabPanel <- function() {
     fluidRow(column(12,
         h3("About CINNAMONED"),
-        p(paste(
+        p(
             "cINNaMoneD is a web-based application, which performs peak",
              "detection, noise filtering, retention time alignment and",
              "intensity normalization in one ore more samples of CE/MS data,",
              "coming from urine derived from human patients with a variety of",
              "renal diseases. Each of the above steps is performed per sample.",
              "The procedure starts by peak detection using the matchedFilter",
-             "algorithm of the Bioconductor package "),
+             "algorithm of the Bioconductor package ",
              a("xcms",
              href="https://bioconductor.org/packages/release/bioc/html/xcms.html",
                 target="_blank"),
              a("(Smith et al., 2006)",
                 href="http://www.ncbi.nlm.nih.gov/pubmed/16448051",
                 target="_blank"),".",
-             paste("Then for each sample, the detected masses are matched to",
-             "a reference dataset, consisting of 6044 mz/retention time pairs,",
+             "Then for each sample, the detected masses are matched to a",
+             "reference dataset, consisting of 6044 mz/retention time pairs,",
              "derived from 75 CE/MS urine samples including control and",
              " healthy samples as well as samples extracted from a variety",
              "of renal diseases. The matched mz pairs between new samples",
@@ -31,7 +31,31 @@ aboutTabPanel <- function() {
              "is performed using a local regression curve constructed using",
              "the intensity of the invariant entities and e reference sample",
              "which is the weighted mean of the matched mz/retention time",
-             "pairs from the reference dataset.")
+             "pairs from the reference dataset."
+        ),
+        p(
+            "The reference dataset was initially processed, fine tuned,",
+            "annotated and summarized using the Bioconductor package xcms",
+            a("(Smith et al., 2006)",
+                href="http://www.ncbi.nlm.nih.gov/pubmed/16448051",
+                target="_blank"),",",
+            "the Bioconductor package CAMERA",
+            a("(Kuhl, et al., 2012)",
+                href="http://www.ncbi.nlm.nih.gov/pubmed/22111785",
+                target="_blank"),",",
+            "several in-house routines. The dataset was furthermore annotated",
+            "using a local installation of the ",
+            a("ChEBI",href="http://www.ebi.ac.uk/chebi/",target="_blank"),
+            "small molecule database, the Human Metabolome Database",
+            a("(HMDB)",href="http://www.hmdb.ca/",target="_blank"),
+            "and the publicly available web services of Kyoto Encyclopedia for",
+            "Genes and Genomes",
+            a("(KEGG)",href="http://www.genome.jp/kegg/",target="_blank"),".",
+            "The invariant mz/retention time pairs were selected using an",
+            "automated method based on geometrical criteria coupled with an",
+            "iterative selection algorithm that minimizes a variability",
+            "measure of the invariant set and assesses the efficiency based",
+            "on the effect of normalization of the total dataset."
         )
     ))
 }

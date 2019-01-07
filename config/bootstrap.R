@@ -11,9 +11,9 @@ if (!require(BiocInstaller)) {
 }
 
 pkgs <- c("RNetCDF","xcms","CAMERA","Rdisop","DT","ggplot2","RCurl","tools",
-    "RSQLite","shiny","shinyjs","shinythemes","colourpicker")
+    "RSQLite","shiny","shinyjs","shinythemes","colourpicker","yaml")
 
 for (p in pkgs) {
-    if (!require(p))
+    if (!require(p,character.only=TRUE))
         biocLite(p) 
 }

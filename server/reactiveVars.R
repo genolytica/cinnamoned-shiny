@@ -11,17 +11,28 @@ initReactiveVars <- function() {
         isRunning=FALSE,
         filesUploaded=FALSE,
         sampleInfoFilled=FALSE,
-        uiError=FALSE,
-        basePath="/media/HD3/cprocess",
-        tmpPath="/media/HD3/ctmp"
+        uiError=FALSE
     )
     
     reactiveVars$pipelineInput <- reactiveValues(
-        basePath="/media/HD3/cprocess",
+        currentRunId=NULL,
+        basePath="/media/HD3/cprocess_tmp",
+        runPath=NULL,
+        dataPath=NULL,
+        dataPathRaw=NULL,
+        dataPathTrunc=NULL,
+        diagPath=NULL,
+        diagPathPreprocess=NULL,
+        diagPathNormallzation=NULL,
+        scriptPath=NULL,
+        sampleInfoFile=NULL,
+        xcmsParamFile=NULL,
+        xcmsLogFile=NULL,
+        normLogFile=NULL,
+        peaksRda=NULL,
+        normRda=NULL,
         tmpPath="/media/HD3/ctmp",
         uploadedFiles=NULL,
-        sampleInfoFile=NULL,
-        currentRunId=NULL,
         filenames=NULL,
         classes=NULL
     )

@@ -2,7 +2,7 @@
 # etc.)
 initPackages <- function(session) {
     # Initial page loading indicator, until all content is loaded
-    ftProgress <- shiny::Progress$new(session,min=0,max=10 )
+    ftProgress <- shiny::Progress$new(session,min=0,max=11)
     ftProgress$set(message="Starting:",value=0)
     on.exit(ftProgress$close())
     
@@ -36,5 +36,7 @@ initPackages <- function(session) {
     require(RSQLite)
     updateFtProgress(value=10,detail="Loading tools")
     require(tools)
+    updateFtProgress(value=11,detail="Loading yaml")
+    require(yaml)
     # highcharter?
 }

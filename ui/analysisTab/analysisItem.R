@@ -257,6 +257,14 @@ analysisTabPanelPreprocess <- function() {
                 htmlOutput("analysisProgress"),
                 class="well-panel"
             )
+        )),
+        fluidRow(column(12,
+            wellPanel(
+                h4("Sample info"),
+                hr(),
+                tableOutput("sampleInfoTable"),
+                class="well-panel"
+            )
         ))
     ))
 }
