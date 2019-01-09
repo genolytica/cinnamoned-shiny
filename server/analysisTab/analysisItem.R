@@ -14,6 +14,21 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # Test the button
         pipelineControl$isRunning <- TRUE
         
+        # Show progress stuff
+        shinyjs::show("progressWrapper")
+        shinyjs::html("analysisProgress","Pipeline running!")
+        
+        # Disable class name and other inputs
+        lapply(1:length(pipelineInput$filenames),function(i,n) {
+            shinyjs::disable(paste("className_",i,sep=""))
+        },pipelineInput$filenames)
+        shinyjs::disable("xcmsDefaultParameters")
+        shinyjs::disable("filterTimeMin")
+        shinyjs::disable("filterTimeMax")
+        shinyjs::disable("projectFiles")
+        shinyjs::disable("sampleInfoFile")
+        shinyjs::disable("resetPreprocessing")
+        
         # 1. Create the directory structure
         # 1a. Define the structure
         pipelineInput$currentRunId <- format(Sys.time(),"%d%m%Y%H%M%S")
@@ -93,7 +108,6 @@ analysisTabPanelEventReactive <- function(input,output,session,
             annotate=isolate(reactiveValuesToList(
                 allReactiveVars$annotatePeaks))
         )
-        print(preParams)
         pipelineInput$xcmsParamFile <- 
             file.path(pipelineInput$scriptPath,"xcms.yml")
         write_yaml(preParams,pipelineInput$xcmsParamFile)
@@ -103,9 +117,11 @@ analysisTabPanelEventReactive <- function(input,output,session,
         pipelineInput$xcmsLogFile <- 
             file.path(pipelineInput$scriptPath,"xcms.Rout")
         xcmsLog <- file(pipelineInput$xcmsLogFile,open="wt")
+        #xcmsLog <- file(pipelineInput$tmpXcmsLogFile,open="wt")
+        #tryCatch(print(xcmsLog),error=function(e) print(e),finally="")
+        
         sink(xcmsLog)
         sink(xcmsLog,type="message")
-        
         # 5b. Run actual pipeline
         peaks <- xcmsPipeline(
             path.to.raw=pipelineInput$dataPathRaw,
@@ -116,12 +132,20 @@ analysisTabPanelEventReactive <- function(input,output,session,
             persample=TRUE,
             multicore=TRUE,
             plotspec=pipelineInput$diagPathPreprocess,
-            plottype="png"
+            plottype="png",
+            shinyProgressData=list(
+                session=session,
+                progressId="preprocessProgressBar",
+                progressTotal=16,
+                headerId="preprocessCurrentFile",
+                footerId="preprocessCurrentStep"
+            )
         )
         
         # 5c. Close the xcmsPipeline log file
         sink(type="message")
         sink()
+        #file.copy(pipelineInput$tmpXcmsLogFile,pipelineInput$xcmsLogFile)
         
         # 5d. Save the peaks for backwards compatibility and reusability
         peaks <- peaks$peaks
@@ -130,9 +154,21 @@ analysisTabPanelEventReactive <- function(input,output,session,
 
         # Pipeline completed hopefully
         pipelineControl$isRunning <- FALSE
+        shinyjs::html("analysisProgress","Preprocess complete!")
+        
+        # Enable class name and other inputs
+        lapply(1:length(pipelineInput$filenames),function(i,n) {
+            shinyjs::enable(paste("className_",i,sep=""))
+        },pipelineInput$filenames)
+        shinyjs::enable("xcmsDefaultParameters")
+        shinyjs::enable("filterTimeMin")
+        shinyjs::enable("filterTimeMax")
+        shinyjs::enable("projectFiles")
+        shinyjs::enable("sampleInfoFile")
+        shinyjs::enable("resetPreprocessing")
         
         # Switch to timefilter status so that the UI can be rendered
-        # pipelineControl$step <- "timefilter" # Works! Tested.
+        #pipelineControl$step <- "timefilter" # Works! Tested.
     })
     
     resetPreprocess <- eventReactive(input$resetPreprocessing,{
@@ -239,16 +275,6 @@ analysisTabPanelReactive <- function(input,output,session,
             })
     })
     
-    #xcmsLogFileData <- reactive({
-    #    if (!is.null(pipelineInput$xcmsLogFile)) {
-    #        reactiveFileReader(1000,session,
-    #            pipelineInput$xcmsLogFile,function(x) {
-    #                allReactiveVars$runtimeMessages$preprocess <- readLines(x)
-    #            }
-    #        )
-    #    }
-    #})
-    
     # Conditional panel status according to analysis status
     output$panelStatus <- reactive({
         switch(pipelineControl$step,
@@ -260,10 +286,29 @@ analysisTabPanelReactive <- function(input,output,session,
             },
             normalization = {
                 return("normalization")
+            },
+            result = {
+                return("result")
             }
         )
     })
     outputOptions(output,"panelStatus",suspendWhenHidden=FALSE)
+    
+    #pollData <- reactivePoll(1000,session,checkFunc = function() {
+    #    if (!is.null(pipelineInput$xcmsLogFile)) {
+    #        if (file.exists(pipelineInput$xcmsLogFile))
+    #            file.info(pipelineInput$xcmsLogFile)$mtime[1]
+    #        else
+    #            ""
+    #    }
+    #    else 
+    #        ""
+    #},valueFunc = function() {
+    #    if (!is.null(pipelineInput$xcmsLogFile)) {
+    #        if (file.exists(pipelineInput$xcmsLogFile))
+    #            readLines(pipelineInput$xcmsLogFile)
+    #    }
+    #})
     
     return(list(
         validateProjectName=validateProjectName,
@@ -271,8 +316,7 @@ analysisTabPanelReactive <- function(input,output,session,
         validateTimeFilterMax=validateTimeFilterMax,
         validateXcmsSNR=validateXcmsSNR,
         uploadFiles=uploadFiles,
-        classNames=classNames#,
-        #xcmsLogFileData=xcmsLogFileData
+        classNames=classNames
     ))
 }
 
@@ -280,43 +324,6 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
-        
-    output$analysisProgress <- renderUI({
-        switch(pipelineControl$step,
-            preprocess = {
-                if (pipelineControl$isRunning) {
-                    # Code to observe file etc.
-                    
-                    # Button test!
-                    div(
-                        h3("Pipeline running!"),
-                        div(class="run-progress",
-                            verbatimTextOutput("runProgress")
-                        )
-                    )
-                }
-                else {
-                    h3("Analysis progress will be displayed here")
-                }
-            },
-            timefilter = {
-                # Stub
-            },
-            normalization = {
-                # Stub
-            }
-        )
-    })
-    
-    # xcms log file div contents
-    output$runProgress <- renderText({
-        xcmsLogFileData <- NULL
-        if (!is.null(pipelineInput$xcmsLogFile))
-            xcmsLogFileData <- reactiveFileReader(1000,session,
-                pipelineInput$xcmsLogFile,readLines)
-        if (!is.null(xcmsLogFileData))
-            xcmsLogFileData()
-    })
     
     # Filenames and classes
     output$sampleInfoEdit <- renderUI({
@@ -339,15 +346,19 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
         }
     })
     
-    ## Test table
-    #output$sampleInfoTable <- renderTable({
-    #    if (length(pipelineInput$filenames)==length(pipelineInput$classes)
-    #        && all(pipelineInput$classes != ""))
-    #        data.frame(
-    #            Filename=pipelineInput$filenames,
-    #            Class=pipelineInput$classes
-    #        )
-    #})
+    # Test table
+    output$sampleInfoTable <- renderTable({
+        if (!is.null(pipelineInput$filenames)
+            && !any(pipelineInput$classes=="") 
+            && !any(is.null(pipelineInput$classes))
+            && length(pipelineInput$filenames)==length(pipelineInput$classes))
+            data.frame(
+                Filename=pipelineInput$filenames,
+                Class=pipelineInput$classes
+            )
+         else
+            data.frame(Filename=NULL,Class=NULL)
+    })
 }
 
 analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
@@ -380,7 +391,6 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     
     uploadFiles <- analysisTabPanelReactiveExprs$uploadFiles
     classNames <- analysisTabPanelReactiveExprs$classNames
-    #xcmsLogFileData <- analysisTabPanelReactiveExprs$xcmsLogFileData
     
     # Initialize UI element reactivity  
     analysisTabPanelRenderUI(output,session,allReactiveVars,allReactiveMsgs)
@@ -434,12 +444,10 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         classNames()
     })
     
-    #observe({
-    #    xcmsLogFileData()
-    #})
-    
     # Act when the run button is pressed
     observe({
+        #session$sendCustomMessage("changeProgressHeader",
+        #    list(value="Running!"))
         tryCatch({
             shinyjs::disable("runPreprocessing")
             runPreprocess()
@@ -455,6 +463,5 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     observe({
         resetPreprocess()
     })
-    
-    # More
+
 }

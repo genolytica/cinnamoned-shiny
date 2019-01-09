@@ -28,6 +28,7 @@ initReactiveVars <- function() {
         sampleInfoFile=NULL,
         xcmsParamFile=NULL,
         xcmsLogFile=NULL,
+        tmpXcmsLogFile=NULL,
         normLogFile=NULL,
         peaksRda=NULL,
         normRda=NULL,

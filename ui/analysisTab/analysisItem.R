@@ -254,7 +254,30 @@ analysisTabPanelPreprocess <- function() {
             wellPanel(
                 h4("Analysis progress"),
                 hr(),
-                htmlOutput("analysisProgress"),
+                div(
+                    id="analysisProgress",
+                    style="font-size: 1.2em; margin-bottom: 5px;",
+                    "Analysis progress will be displayed here"
+                ),
+                hidden(div(
+                    id="progressWrapper",
+                    div(
+                        class="progressbar-header",
+                        id="progressBarHeader",""
+                    ),
+                    progressBar(
+                        id="preprocessProgressBar",
+                        value=0,
+                        total=15,
+                        display_pct=TRUE,
+                        status="danger",
+                        striped=TRUE
+                    ),
+                    div(
+                        class="progressbar-footer",
+                        id="progressBarFooter",""
+                    )
+                )),
                 class="well-panel"
             )
         )),

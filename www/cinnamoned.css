@@ -114,7 +114,28 @@ input[type="color"]:focus,
     overflow: auto;
     /*display: none;*/
 }
- 
+
+.progressbar-header {
+    background-color: #F35236;
+    width: 100%;
+    color: #FFFFFF;
+    padding: 5px;
+    font-weight: 600;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
+.progressbar-footer {
+    background-color: #F35236;
+    width: 100%;
+    color: #FFFFFF;
+    padding: 5px;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
 .footer {
     background-color: #C94410;
     border-color: #A33307;
@@ -167,3 +188,25 @@ input[type="color"]:focus,
     border-color: #A33307
 }
 
+/* Override default table styling */
+
+.table>caption+thead>tr:first-child>th, 
+.table>colgroup+thead>tr:first-child>th, 
+.table>thead:first-child>tr:first-child>th, 
+.table>caption+thead>tr:first-child>td, 
+.table>colgroup+thead>tr:first-child>td, 
+.table>thead:first-child>tr:first-child>td {
+    border-top: 0;
+    border-color: #A33307;
+}
+
+.table.shiny-table > thead > tr > th, 
+.table.shiny-table > tbody > tr > th, 
+.table.shiny-table > tfoot > tr > th, 
+.table.shiny-table > thead > tr > td, 
+.table.shiny-table > tbody > tr > td, 
+.table.shiny-table > tfoot > tr > td {
+    padding-left: 12px;
+    padding-right: 12px;
+    border-color: #A33307;
+}

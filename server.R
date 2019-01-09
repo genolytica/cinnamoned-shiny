@@ -12,6 +12,9 @@ shinyServer(
         source("server/analysisTab/analysisItem.R",local=TRUE)
         source("server/databaseTab/databaseItem.R",local=TRUE)
         
+        # Check packages
+        checkPackages(session)
+        
         # Init packages
         initPackages(session)
         

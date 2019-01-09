@@ -3,6 +3,7 @@
 require(DT)
 require(shinyjs)
 require(shinythemes)
+require(shinyWidgets)
 
 source("config/init_server_globals.R")
 source("ui/analysisTab/analysisItem.R")
@@ -13,6 +14,18 @@ source("ui/aboutTab/aboutItem.R")
 shinyUI(fluidPage(
     theme=shinytheme("united"),
     shinyjs::useShinyjs(),
+    tags$head(
+        tags$script(
+            'Shiny.addCustomMessageHandler("changeProgressHeader",',
+            'function(msg) {',
+            '    $("#progressBarHeader").html(msg.value);',
+            '});',
+            'Shiny.addCustomMessageHandler("changeProgressFooter",',
+            'function(msg) {',
+            '    $("#progressBarFooter").html(msg.value);',
+            '});'
+        )
+    ),
     tags$head(
         tags$link(
             rel="stylesheet",

@@ -12,7 +12,7 @@
 
 xcmsPipeline <- function(path.to.raw,info.file,param.file,path.to.trunc=NULL,
     annotate=FALSE,persample=FALSE,multicore=FALSE,plotspec=NULL,
-    plottype="x11") {
+    plottype="x11",shinyProgressData=NULL) {
     if (!require(tools))
         stop("R package tools is required!")
     if (!require(xcms))
@@ -20,6 +20,15 @@ xcmsPipeline <- function(path.to.raw,info.file,param.file,path.to.trunc=NULL,
     if (!require(yaml))
         warning("R package yaml not present... yml parameter file will not be ",
             "read and might result in error...",call.=FALSE)
+    
+    if (!is.null(shinyProgressData)) {
+        if (!require(shinyWidgets)) {
+            warning("R package shinyWidgets not present... Disabling progress ",
+                "bar...",immediate.=TRUE)
+            shinyProgressData <- NULL
+        }
+    }
+        
 
     if (multicore) {
         if (!require(parallel)) {
@@ -76,7 +85,7 @@ xcmsPipeline <- function(path.to.raw,info.file,param.file,path.to.trunc=NULL,
     
     the.raw.files <- file.path(path.to.raw,meta.data$Filename)
     # We have to perform initial filtering of netcdf files
-    if (param.list$filter$do) { 
+    if (param.list$filter$do) {
         message("--- TRUNCATING INPUT FILE(S) FOR RETENTION TIME LIMITS ---")
         if (is.null(path.to.trunc)) {
             path.to.trunc <- file.path(path.to.raw,"Trunc")
@@ -84,7 +93,8 @@ xcmsPipeline <- function(path.to.raw,info.file,param.file,path.to.trunc=NULL,
                 dir.create(path.to.trunc,recursive=TRUE,mode="0755")
         }
         filterBrukerNetCDF(the.raw.files,out.path=path.to.trunc,
-            filter.time=c(param.list$filter$min,param.list$filter$max))
+            filter.time=c(param.list$filter$min,param.list$filter$max),
+            shinyProgressData=shinyProgressData)
         the.raw.files <- file.path(path.to.trunc,meta.data$Filename)
     }
 
@@ -97,6 +107,15 @@ xcmsPipeline <- function(path.to.raw,info.file,param.file,path.to.trunc=NULL,
         param.list$find$mzdiff <- 0.8-param.list$find$step*param.list$find$steps
 
     message("--- PREPROCESSING FILE(S) WITH XCMS ---")
+    ########################################################################
+    updateShinyProgressBar(
+        shinyProgressData=shinyProgressData,
+        pbValue=15,
+        headerMsg=paste("Processing filtered files...",
+            collapse=""),
+        footerMsg="Calling peaks with xcms..."
+    )
+    ########################################################################
     if (persample) {
         if (multicore) {
             the.xfiles <- as.list(the.raw.files)
@@ -382,6 +401,17 @@ xcmsPipeline <- function(path.to.raw,info.file,param.file,path.to.trunc=NULL,
     }
 
     message("--- FINISHED! ---")
+    message("--- PREPROCESSING FILE(S) WITH XCMS ---")
+    ########################################################################
+    updateShinyProgressBar(
+        shinyProgressData=shinyProgressData,
+        pbValue=16,
+        headerMsg=paste("Filtered files processing finished!",
+            collapse=""),
+        footerMsg="Peaks called and saved!"
+    )
+    ########################################################################
+    
     # We should be returning an object or a list of objects ready to feed to
     # summarizePeaks
     if (persample)
@@ -639,4 +669,26 @@ reorder.raw <- function(raw.files,ord.names) {
         org.ind[i] <- which(raw.files==ord.names[i])
     ord.files <- raw.files[org.ind]
     return(ord.files)
+}
+
+updateShinyProgressBar <- function(shinyProgressData,pbValue,headerMsg="",
+    footerMsg="") {
+    
+    if (is.null(shinyProgressData))
+        return()
+    
+    if (is.null(shinyProgressData$progressTotal))
+        shinyProgressData$progressTotal <- 100
+    
+    updateProgressBar(
+        session=shinyProgressData$session,
+        id=shinyProgressData$progressId,
+        value=pbValue,
+        total=shinyProgressData$progressTotal
+    )
+    
+    shinyProgressData$session$sendCustomMessage(
+        "changeProgressHeader",list(value=headerMsg))
+    shinyProgressData$session$sendCustomMessage(
+        "changeProgressFooter",list(value=footerMsg))
 }

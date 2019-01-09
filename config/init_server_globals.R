@@ -4,6 +4,7 @@
 # Load basic packages
 require(shiny)
 require(shinyjs)
+require(shinyWidgets)
 require(colourpicker)
 
 # Load backend functions
@@ -34,5 +35,3 @@ errorMessages <- list(
 
 # Maximum filesize
 options(shiny.maxRequestSize=10*1024^3)
-
-LOADED <- FALSE

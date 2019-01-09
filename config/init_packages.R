@@ -1,5 +1,51 @@
 # Function initializing cinnamoned2 universe (packages, persistent variables, 
 # etc.)
+
+# Check if bootstrap required
+checkPackages <- function(session) {
+    # At least shiny must be installed!
+    # A good package to check for bootstrapping is shinyjs as it's not related
+    # to Bioconductor packages that may be present anyway
+    if (!require(shinyjs)) {
+        # Sometimes there is a problem with https in virgin VMs...
+        source("http://bioconductor.org/biocLite.R")
+
+        if (!require(BiocInstaller)) {
+            install.packages("BiocInstaller",
+                repos="http://bioconductor.org/packages/3.7/bioc")
+            require(BiocInstaller)
+        }
+
+        pkgs <- c("RNetCDF","xcms","CAMERA","Rdisop","DT","ggplot2","RCurl",
+            "tools","RSQLite","shiny","shinyjs","shinythemes","colourpicker",
+            "yaml","shinyWidgets")
+
+        # Bootstraping progress bar
+        bsProgress <- shiny::Progress$new(session,min=0,max=length(pkgs))
+        bsProgress$set(message="Installing package:",value=0)
+        on.exit(bsProgress$close())
+        
+        # Progress update function
+        updateBtProgress <- function(value=NULL,detail=NULL) {
+            if (is.null(value)) {
+                value <- bsProgress$getValue()
+                value <- value + 1
+            }
+            bsProgress$set(value=value,detail=detail)
+        }
+        
+        count <- 0
+        for (p in pkgs) {
+            count <- count + 1
+            if (!require(p,character.only=TRUE)) {
+                updateBsProgress(value=count,
+                    detail=paste("Installing ",p,collapse=""))
+                biocLite(p)
+            }
+        }
+    }
+}
+
 initPackages <- function(session) {
     # Initial page loading indicator, until all content is loaded
     ftProgress <- shiny::Progress$new(session,min=0,max=11)
