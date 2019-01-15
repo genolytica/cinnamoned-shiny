@@ -5,6 +5,16 @@ body {
     margin: 0px;
 }
 
+mark {
+  background-color: green;
+  color: white;
+}
+
+b {
+  color: black;
+  font-weight: bold;
+}
+
 hr {
     border-color: #A33307;
     background-color: #A33307;

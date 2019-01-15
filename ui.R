@@ -59,11 +59,13 @@ shinyUI(fluidPage(
         ),
         navbarMenu("Database",icon=icon("database"),
             tabPanel("Manage",icon=icon("eye"),
-                databaseTabPanel()
+                databaseManageTabPanel()
             ),
-            tabPanel("Modify",icon=icon("pencil")
+            tabPanel("Modify",icon=icon("pencil"),
+                databaseModifyTabPanel()
             ),
-            tabPanel("Search",icon=icon("search")
+            tabPanel("Search",icon=icon("search"),
+                databaseSearchTabPanel()
             )
         ),
         tabPanel("About",icon=icon("info"),
@@ -71,7 +73,8 @@ shinyUI(fluidPage(
         )
     ),
     # Footer
-    fluidRow(column(12,
+    absolutePanel(bottom = "0%", width = "98%", fixed = TRUE,
+      fluidRow(column(12,
         div(
             class="footer",
             "Copyright ",HTML("&copy;"),"2018 ",
@@ -80,6 +83,6 @@ shinyUI(fluidPage(
             "Designed and maintened by ",
             a("HybridStat",href="http://www.hybridstat.com/",target="_blank")
         )
-    ))
+      ))
+    )
 ))
-

@@ -1,0 +1,11 @@
+#gitignore
+
+\.Rproj\.user/
+
+*.Rproj
+
+data/
+
+\.Rhistory
+
+\.RData
