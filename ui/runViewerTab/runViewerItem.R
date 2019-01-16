@@ -1,3 +1,4 @@
 runViewerTabPanel <- function() {
-    fluidRow(column(12,h1("Lorem ipsum")))
+    fluidRow(column(12,
+        h1("Lorem ipsum")))
 }

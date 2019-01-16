@@ -67,7 +67,7 @@ analysisTabPanelPreprocess <- function() {
                         numericInput(
                             inputId="filterTimeMin", 
                             label="Min (seconds)", 
-                            value=300,
+                            value=600,
                             min=0
                         ),
                         div(id="filterTimeMinError",class="input-error",
@@ -81,7 +81,10 @@ analysisTabPanelPreprocess <- function() {
                         ),
                         div(id="filterTimeMaxError",class="input-error",
                             errorMessages$filterTimeMax)
-                    ))
+                    ),
+                    div(id="filterTimeCompError",class="input-error",
+                        errorMessages$filterTimeComparison)
+                    )
                 ),
                 class="well-panel"
             )
@@ -147,7 +150,9 @@ analysisTabPanelPreprocess <- function() {
                             "Use defaults"="defaults",
                             "Customize"="custom"
                         )
-                    )
+                    ),
+                    div(id="profStepError",class="input-error",
+                        errorMessages$profStep)
                 )),
                 conditionalPanel(
                     condition="input.xcmsDefaultParameters=='custom'",
@@ -162,7 +167,9 @@ analysisTabPanelPreprocess <- function() {
                                     label="Profile reading step", 
                                     value=1,
                                     min=1
-                                )
+                                ),
+                                div(id="profileStepError",class="input-error",
+                                    errorMessages$profileStep)
                             ),column(6,
                                 selectInput(
                                     inputId="profileMethod",
@@ -193,32 +200,42 @@ analysisTabPanelPreprocess <- function() {
                                     inputId="xcmsEIBPCSize", 
                                     label="EIBPC step size", 
                                     value="0.1"
-                                )
+                                ),
+                                div(id="xcmsEIBPCSizeError",class="input-error",
+                                    errorMessages$xcmsEIBPCSize)
                             ),column(4,
                                 textInput(
                                     inputId="xcmsFWHM", 
                                     label="Full width at half maximum", 
                                     value="30"
-                                )
+                                ),
+                                div(id="xcmsFWHMError",class="input-error",
+                                    errorMessages$xcmsFWHM)
                             )),
                             fluidRow(column(4,
                                 textInput(
                                     inputId="xcmsSigma", 
                                     label="Peak model standard deviation", 
                                     value="7"
-                                )
+                                ),
+                                div(id="xcmsSigmaError",class="input-error",
+                                    errorMessages$xcmsSigma)
                             ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCSteps", 
                                     label="EIBPC combine steps", 
                                     value="3"
-                                )
+                                ),
+                                div(id="xcmsEIBPCStepsError",class="input-error",
+                                    errorMessages$xcmsEIBPCSteps)
                             ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCMaxPeaks", 
                                     label="Maximum peaks per EIBPC", 
                                     value="5"
-                                )
+                                ),
+                                div(id="xcmsEIBPCMaxPeaksError",class="input-error",
+                                    errorMessages$xcmsEIBPCMaxPeaks)
                             ))
                         )
                     )

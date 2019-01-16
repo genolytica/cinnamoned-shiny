@@ -189,12 +189,24 @@ initReactiveVars <- function() {
     
     reactiveVars$resetPreprocess <- function() {
         # Reset readSpec, findPeaks, uploadedFiles
-        # TODO: Fill the function
+        # TODO: Fill the function - DONE?
+      
+        # Reset readSpec
+        reactiveVars$readSpec$profstep <- 1
+        # Reset findPeaks
+        reactiveVars$findPeaks$snthresh <- 7
+        reactiveVars$findPeaks$step     <- 0.1
+        reactiveVars$findPeaks$fwhm     <- 30
+        reactiveVars$findPeaks$sigma    <- 7
+        reactiveVars$findPeaks$steps    <- 3
+        reactiveVars$findPeaks$max      <- 5
+        # Reset uploadFiles
+        
     }
 
     reactiveVars$resetTimefilter <- function() {
         # Reset timeFilter
-        reactiveVars$timeFilter$do <- TRUE
+        reactiveVars$timeFilter$do  <- TRUE
         reactiveVars$timeFilter$min <- 600
         reactiveVars$timeFilter$max <- 3000
     }

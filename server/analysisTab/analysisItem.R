@@ -186,8 +186,23 @@ analysisTabPanelEventReactive <- function(input,output,session,
             value=allReactiveVars$timeFilter$min)
         updateNumericInput(session,inputId="filterTimeMax",
             value=allReactiveVars$timeFilter$max)
-        #TODO: All the rest inputs
-        
+        #TODO: All the rest inputs - DONE?
+        updateNumericInput(session,inputId="filterTimeComparison",
+            value=allReactiveVars$timeFilter$max)
+        updateNumericInput(session,inputId="profileStep",
+            value=allReactiveVars$readSpec$profstep)
+        updateNumericInput(session,inputId="xcmsSNR",
+            value=allReactiveVars$findPeaks$snthresh)
+        updateNumericInput(session,inputId="xcmsEIBPCSize",
+            value=allReactiveVars$findPeaks$step)
+        updateNumericInput(session,inputId="xcmsFWHM",
+            value=allReactiveVars$findPeaks$fwhm)
+        updateNumericInput(session,inputId="xcmsSigma",
+            value=allReactiveVars$findPeaks$sigma)
+        updateNumericInput(session,inputId="xcmsEIBPCSteps",
+            value=allReactiveVars$findPeaks$steps)
+        updateNumericInput(session,inputId="xcmsEIBPCMaxPeaks",
+            value=allReactiveVars$findPeaks$max)
     })
     
     return(list(
@@ -244,9 +259,33 @@ analysisTabPanelReactive <- function(input,output,session,
             return(FALSE)
         }
     })
+    validateTimeFilterComp <- reactive({
+      tComp <-  as.numeric(input$filterTimeMax)-as.numeric(input$filterTimeMin)
+      if (tComp < 0 || is.na(tComp)) {
+        pipelineControl$uiError <- TRUE
+        return(TRUE)
+      }
+      
+      else {
+        pipelineControl$uiError <- FALSE
+        return(FALSE)
+      }
+    })
+    validateProfStep <- reactive({
+      pStep <- as.numeric(input$profileStep)
+      if (pStep <= 0 || is.na(pStep)) {
+        pipelineControl$uiError <- TRUE
+        return(TRUE)
+      }
+      
+      else {
+        pipelineControl$uiError <- FALSE
+        return(FALSE)
+      }
+    })
     validateXcmsSNR <- reactive({
         snr <- as.numeric(input$xcmsSNR)
-        if (snr < 0 || is.na(snr)) {
+        if (snr <= 0 || is.na(snr)) {
             pipelineControl$uiError <- TRUE
             return(TRUE)
         }
@@ -256,7 +295,68 @@ analysisTabPanelReactive <- function(input,output,session,
             return(FALSE)
         }
     })
-    #TODO: All the rest validators
+    #TODO: All the rest validators - DONE?
+    
+    validateXcmsEIBPCSize <- reactive({
+      eibpcsize <- as.numeric(input$xcmsEIBPCSize)
+      if (eibpcsize <= 0 || is.na(eibpcsize)) {
+        pipelineControl$uiError <- TRUE
+        return(TRUE)
+      }
+      
+      else {
+        pipelineControl$uiError <- FALSE
+        return(FALSE)
+      }
+    })
+    validateXcmsFWHM <- reactive({
+      fwhm <- as.numeric(input$xcmsFWHM)
+      if (fwhm <= 0 || is.na(fwhm)) {
+        pipelineControl$uiError <- TRUE
+        return(TRUE)
+      }
+      
+      else {
+        pipelineControl$uiError <- FALSE
+        return(FALSE)
+      }
+    })
+    validateXcmsSigma <- reactive({
+      sigma <- as.numeric(input$xcmsSigma)
+      if (sigma < 0 || is.na(sigma)) {
+        pipelineControl$uiError <- TRUE
+        return(TRUE)
+      }
+      
+      else {
+        pipelineControl$uiError <- FALSE
+        return(FALSE)
+      }
+    })
+    validateXcmsEIBPCSteps <- reactive({
+      eibpcsteps <- as.numeric(input$xcmsEIBPCSteps)
+      if (eibpcsteps <= 0 || is.na(eibpcsteps)) {
+        pipelineControl$uiError <- TRUE
+        return(TRUE)
+      }
+      
+      else {
+        pipelineControl$uiError <- FALSE
+        return(FALSE)
+      }
+    })
+    validateXcmsEIBPCMaxPeaks <- reactive({
+      maxpeaks <- as.numeric(input$xcmsEIBPCMaxPeaks)
+      if (maxpeaks <= 0 || is.na(maxpeaks)) {
+        pipelineControl$uiError <- TRUE
+        return(TRUE)
+      }
+      
+      else {
+        pipelineControl$uiError <- FALSE
+        return(FALSE)
+      }
+    })
     
     # Uploaded files
     uploadFiles <- reactive({
@@ -314,8 +414,15 @@ analysisTabPanelReactive <- function(input,output,session,
         validateProjectName=validateProjectName,
         validateTimeFilterMin=validateTimeFilterMin,
         validateTimeFilterMax=validateTimeFilterMax,
+        validateTimeFilterComp=validateTimeFilterComp,
+        validateProfStep=validateProfStep,
         validateXcmsSNR=validateXcmsSNR,
+        validateXcmsEIBPCSize=validateXcmsEIBPCSize,
+        validateXcmsFWHM=validateXcmsFWHM,
+        validateXcmsSigma=validateXcmsSigma,
         uploadFiles=uploadFiles,
+        validateXcmsEIBPCSteps=validateXcmsEIBPCSteps,
+        validateXcmsEIBPCMaxPeaks=validateXcmsEIBPCMaxPeaks,
         classNames=classNames
     ))
 }
@@ -385,10 +492,24 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         analysisTabPanelReactiveExprs$validateTimeFilterMin
     validateTimeFilterMax <- 
         analysisTabPanelReactiveExprs$validateTimeFilterMax
+    validateTimeFilterComp <- 
+      analysisTabPanelReactiveExprs$validateTimeFilterComp
+    validateProfStep <- 
+      analysisTabPanelReactiveExprs$validateProfStep
     validateXcmsSNR <- 
         analysisTabPanelReactiveExprs$validateXcmsSNR
-    #TODO: Retrieve all the rest fields defined in analysisTabPanelReactive
-    
+    #TODO: Retrieve all the rest fields defined in analysisTabPanelReactive - DONE?
+    validateXcmsEIBPCSize <- 
+      analysisTabPanelReactiveExprs$validateXcmsEIBPCSize
+    validateXcmsFWHM <- 
+      analysisTabPanelReactiveExprs$validateXcmsFWHM
+    validateXcmsSigma <- 
+      analysisTabPanelReactiveExprs$validateXcmsSigma
+    validateXcmsEIBPCSteps <- 
+      analysisTabPanelReactiveExprs$validateXcmsEIBPCSteps
+    validateXcmsEIBPCMaxPeaks <- 
+      analysisTabPanelReactiveExprs$validateXcmsEIBPCMaxPeaks
+
     uploadFiles <- analysisTabPanelReactiveExprs$uploadFiles
     classNames <- analysisTabPanelReactiveExprs$classNames
     
@@ -403,11 +524,6 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         else
             shinyjs::hide("projectNameError")
             
-        if (validateTimeFilterMax())
-            shinyjs::show("filterTimeMaxError")
-        else
-            shinyjs::hide("filterTimeMaxError")
-        
         if (validateTimeFilterMin())
             shinyjs::show("filterTimeMinError")
         else
@@ -417,13 +533,48 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
             shinyjs::show("filterTimeMaxError")
         else
             shinyjs::hide("filterTimeMaxError")
-            
+        
+        if (validateTimeFilterComp())
+            shinyjs::show("filterTimeCompError")
+        else
+            shinyjs::hide("filterTimeCompError")
+      
+        if (validateProfStep())
+            shinyjs::show("profileStepError")
+        else
+            shinyjs::hide("profileStepError")
+      
         if (validateXcmsSNR())
             shinyjs::show("xcmsSNRError")
         else
             shinyjs::hide("xcmsSNRError")
             
-        # TODO: All the rest validators
+        # TODO: All the rest validators - DONE?
+
+        if (validateXcmsEIBPCSize())
+            shinyjs::show("xcmsEIBPCSizeError")
+        else
+            shinyjs::hide("xcmsEIBPCSizeError")
+      
+        if (validateXcmsFWHM())
+            shinyjs::show("xcmsFWHMError")
+        else
+            shinyjs::hide("xcmsFWHMError")
+      
+        if (validateXcmsSigma())
+            shinyjs::show("xcmsSigmaError")
+        else
+            shinyjs::hide("xcmsSigmaError")
+      
+        if (validateXcmsEIBPCSteps())
+            shinyjs::show("xcmsEIBPCStepsError")
+        else
+            shinyjs::hide("xcmsEIBPCStepsError")
+      
+        if (validateXcmsEIBPCMaxPeaks())
+            shinyjs::show("xcmsEIBPCMaxPeaksError")
+        else
+            shinyjs::hide("xcmsEIBPCMaxPeaksError")
     })
     
     # If a validator fails or requirements not met, disable the run button

@@ -30,7 +30,14 @@ errorMessages <- list(
         "\ / @ # $ & * ` ! ( ) % ^ , . < > ? | ' ; [ ] \" or space"),
     filterTimeMin="Minimum time must be an integer greater than 0!",
     filterTimeMax="Maximum time must be an integer greater than 0!",
-    xcmsSNR="Signal to noise ratio must be a real number greater than 0!"
+    filterTimeComparison="Maximum time must be greater than Minimum time!",
+    profileStep="Profile reading step must be an integer greater than 0!",
+    xcmsSNR="Signal to noise ratio must be a real number greater than 0!",
+    xcmsEIBPCSize="EIBPC step size must be an integer greater than 0!",
+    xcmsFWHM="Full width at half maximum must be an integer greater than 0!",
+    xcmsSigma="Peak model standard deviation (sigma) must be an integer >= 0!",
+    xcmsEIBPCSteps="EIBPC steps to combine must be an integer greater than 0!",
+    xcmsEIBPCMaxPeaks="Maximum peaks per EIBPC must be an integer greater than 0!"
 )
 
 # Maximum filesize
