@@ -316,9 +316,172 @@ analysisTabPanelTimefilter <- function() {
 }
 
 analysisTabPanelNormalization <- function() {
-    fluidRow(column(12,
-        h1("Normalization page")
+    fluidRow(column(10,
+        h4("Standards based normalization parameters"),
+            radioButtons(
+                inputId="normalizationParameters",
+                label="Use default normalization parameters",
+                inline=TRUE,
+                choices=list(
+                  "Use defaults"="defaults",
+                  "Customize"="custom"
+                )
+            ),
+            wellPanel(
+                h5("General"),
+                hr(),
+                    class="well-panel",
+                        fluidRow(column(4,
+                            selectInput(
+                                inputId="method", 
+                                label="Standards selection method:", 
+                                choices=list(
+                                        "geometrical"="geom",
+                                        "robust linear model"="rlm",
+                                        "both"="both"
+                                ),
+                                selected="geom"
+                            )
+                        ),column(4,
+                              selectInput(
+                                  inputId="correctfor", 
+                                  label="Correct for:", 
+                                  choices=list(
+                                      "time-intensity"="both",
+                                      "time"="time",
+                                      "intensity"="intensity",
+                                      "none"="none"
+                                  ),
+                                  selected="both"
+                              )
+                        ),column(4,
+                              textInput(
+                                  inputId="mztol", 
+                                  label = "m/z tolerance:", 
+                                  value = 0.1 
+                             )
+                          )
+                        ),
+                      fluidRow(column(4,
+                          checkboxInput(
+                              inputId="diagPlots", 
+                              label = "Plot diagnostics", 
+                              value = TRUE
+                          )
+                      )),
+                      fluidRow(column(4,
+                          selectInput(
+                              inputId="export", 
+                              label = "Export results:", 
+                              choices = list(
+                                  "Do not export"="none",
+                                  "All data"="all",
+                                  "Gene ARMADA"="armada"
+                              ),
+                              selected="all"
+                          )
+                      ))
+                  ),
+                  wellPanel(
+                      h5("Retention time alignment"),
+                      hr(),
+                      class="well-panel",
+                          fluidRow(column(6,
+                              textInput(
+                                  inputId="tspan", 
+                                  label="LOESS span:", 
+                                  value="0"
+                              ),
+                              div(id="xcmsSNRError",class="input-error",
+                                  errorMessages$xcmsSNR)
+                          ),column(6,
+                                textInput(
+                                    inputId="it", 
+                                    label="Alignment algorithm iterrations:", 
+                                    value="3"
+                                ),
+                                div(id="xcmsEIBPCSizeError",class="input-error",
+                                    errorMessages$xcmsEIBPCSize)
+                          )),
+                          fluidRow(column(6,
+                              textInput(
+                                  inputId="corrfac", 
+                                  label="LOESS singularity correction factor:", 
+                                  value="2"
+                              ),
+                              div(id="xcmsSNRError",class="input-error",
+                                  errorMessages$xcmsSNR)
+                          ),column(6,
+                              textInput(
+                                  inputId="cutq", 
+                                  label="RT deviation exclusion quantile:", 
+                                  value="0.98"
+                              ),
+                              div(id="xcmsEIBPCSizeError",class="input-error",
+                                  errorMessages$xcmsEIBPCSize)
+                          ))
+                  ),
+                  wellPanel(
+                      h5("Intensity normalization"),
+                      hr(),
+                      class="well-panel",
+                          fluidRow(column(6,
+                              selectInput(
+                              inputId="diagPlots", 
+                              label = "Export results:", 
+                              choices = list(
+                                  "LOESS"="loess",
+                                  "robust linear model (RLM)"="rlm",
+                                  "linear model (LM)"="lm",
+                                  "ISfactor"="simple"
+                                ),
+                                selected="rlm"
+                                )
+                          ),column(6,
+                              textInput(
+                              inputId="ispan", 
+                              label="LOESS span:", 
+                              value="0"
+                              ),
+                              div(id="xcmsEIBPCSizeError",class="input-error",
+                                  errorMessages$xcmsEIBPCSize)
+                          )),
+                          fluidRow(column(6,
+                              textInput(
+                                  inputId="corrfac", 
+                                  label="Non-standards correction factor:", 
+                                  value="2"
+                              ),
+                              div(id="xcmsSNRError",class="input-error",
+                                  errorMessages$xcmsSNR)
+                          ))
+                    ),
+                    fluidRow(br()),
+                    fluidRow(column(6,
+                        div(
+                            class="pull-left",
+                            style="display:inline-block",
+                            actionButton(
+                                inputId="resetNormalization",
+                                label="Reset",
+                                icon=icon("undo")
+                              )
+                          )
+                    ),column(2," "
+                    ),column(6,
+                        div(
+                            class="pull-right",
+                            style="display:inline-block",
+                             disabled(actionButton(
+                                inputId="runNormalization",
+                                label="Engage!",
+                                icon=icon("rocket"),
+                                class="btn-primary"
+                             ))
+                           )
+                  ))
     ))
+  
 }
 
 analysisTabPanelResult <- function() {
