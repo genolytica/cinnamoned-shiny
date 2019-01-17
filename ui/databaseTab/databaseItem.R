@@ -4,7 +4,10 @@ databaseManageTabPanel <- function() {
   column(4, 
     wellPanel(
       h2("Run Details"),
-      htmlOutput('paramsInfo'), style = "overflow: auto;")
+      hr(),
+      htmlOutput('paramsInfo'), 
+      style = "overflow: auto;",
+      class="well-panel")
     )
   )
 }
@@ -67,7 +70,7 @@ databaseSearchTabPanel <- function() {
                      icon=icon("rocket")
                    )
                  )
-          )
+          ),class="well-panel"
         )
       ))
     )
