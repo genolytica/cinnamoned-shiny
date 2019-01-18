@@ -289,14 +289,11 @@ analysisTabPanelReactive <- function(input,output,session,
             pipelineControl$uiError <- TRUE
             return(TRUE)
         }
-            
         else {
             pipelineControl$uiError <- FALSE
             return(FALSE)
         }
     })
-    #TODO: All the rest validators - DONE?
-    
     validateXcmsEIBPCSize <- reactive({
       eibpcsize <- as.numeric(input$xcmsEIBPCSize)
       if (eibpcsize <= 0 || is.na(eibpcsize)) {
@@ -466,6 +463,38 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
          else
             data.frame(Filename=NULL,Class=NULL)
     })
+    
+    # Timefilter page
+    output$spectralInspection <- renderUI({
+        if (!is.null(pipelineInput$filenames)) {
+            lapply(1:length(pipelineInput$filenames),function(i,n) {
+                fluidRow(column(12,
+                    wellPanel(
+                        h4("Spectral plot for ",basename(n[i])),
+                        br(),
+                        plotOutput(paste("rawSpectre",i,sep="_")),
+                        br(),
+                        fluidRow(column(2,
+                            disabled(textInput(
+                                inputId=paste("reviewMinTime",i,sep="_"),
+                                label="Review min time (seconds)", 
+                                value=""
+                            ))
+                        ),column(2,
+                            disabled(textInput(
+                                inputId=paste("reviewMaxTime",i,sep="_"),
+                                label="Review max time (seconds)", 
+                                value=""
+                            ))
+                        ),column(8,"Buttons"
+                        )),
+                        class="well-panel"
+                    )
+                ))
+            },pipelineInput$filenames)
+        }
+    })
+    #pipelineInput$dataPath
 }
 
 analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
