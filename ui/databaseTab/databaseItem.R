@@ -58,21 +58,30 @@ databaseSearchTabPanel <- function() {
                      )
               )
               )
-            )
-          ),
-          column(3,
+            ),
+          	column(3,
                  div(
                    class="pull-left",
                    style="display:inline-block",
                    actionButton(
                      inputId="calculateMetaboFilter",
                      label="Engage!",
-                     icon=icon("rocket")
+                     icon=icon("rocket"),
+                     class="btn-primary"
                    )
                  )
+          ),fluidRow()
           ),class="well-panel"
         )
-      ))
+      )),
+      fluidRow(  column(4, 
+    wellPanel(
+      h2("Filter to Query with"),
+      hr(),
+      verbatimTextOutput('filter'), 
+      style = "overflow: auto;",
+      class="well-panel")
+    ))
     )
   ))
 }
