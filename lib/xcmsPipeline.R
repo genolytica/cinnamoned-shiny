@@ -390,13 +390,13 @@ xcmsPipeline <- function(path.to.raw,info.file,param.file,path.to.trunc=NULL,
     if (!is.null(plotspec)) {
         if (is.list(peaks)) {
             for (i in 1:length(peaks)) {
-                plot.mzrt(peaks[[i]]$rt,peaks[[i]]$mz,inten=peaks[[i]]$into,
+                plotMzrt(peaks[[i]]$rt,peaks[[i]]$mz,inten=peaks[[i]]$into,
                     output=plottype,fil=file.path(plotspec,
                     paste(meta.data$Samplename[i],plottype,sep=".")))
             }
         }
         else
-            plot.mzrt(peaks$rt,peaks$mz,output=plottype,
+            plotMzrt(peaks$rt,peaks$mz,output=plottype,
                 fil=file.path(plotspec,paste("xcmsPeaks",plottype,sep=".")))
     }
 

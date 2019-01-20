@@ -3,9 +3,9 @@
 
 # Load basic packages
 require(shiny)
-require(shinyjs)
-require(shinyWidgets)
-require(colourpicker)
+#require(shinyjs)
+#require(shinyWidgets)
+#require(colourpicker)
 
 # Load backend functions
 source("lib/annotatePeaks.R")

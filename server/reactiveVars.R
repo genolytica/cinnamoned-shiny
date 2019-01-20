@@ -5,7 +5,7 @@ initReactiveVars <- function() {
     
     reactiveVars$pipelineControl <- reactiveValues(
         step="preprocess",
-        #step="timefilter"
+        #step="timefilter",
         #step="normalization"
         #step="result"
         isRunning=FALSE,
@@ -36,6 +36,37 @@ initReactiveVars <- function() {
         uploadedFiles=NULL,
         filenames=NULL,
         classes=NULL
+    )
+    
+    #reactiveVars$pipelineInput <- reactiveValues(
+    #    currentRunId="20012019125112",
+    #    basePath="/media/HD3/cprocess_tmp",
+    #    runPath="/media/HD3/cprocess_tmp/20012019125112",
+    #    dataPath="/media/HD3/cprocess_tmp/20012019125112/data",
+    #    dataPathRaw="/media/HD3/cprocess_tmp/20012019125112/data/raw",
+    #    dataPathTrunc="/media/HD3/cprocess_tmp/20012019125112/data/trunc",
+    #    diagPath="/media/HD3/cprocess_tmp/20012019125112/diagnostic",
+    #    diagPathPreprocess="/media/HD3/cprocess_tmp/20012019125112/diagnostic/preprocess",
+    #    diagPathNormallzation="/media/HD3/cprocess_tmp/20012019125112/diagnostic/normalization",
+    #    scriptPath="/media/HD3/cprocess_tmp/20012019125112/scripts",
+    #    sampleInfoFile="/media/HD3/cprocess_tmp/20012019125112/sample_info.txt",
+    #    xcmsParamFile="/media/HD3/cprocess_tmp/20012019125112/scripts/xcms.yml",
+    #    xcmsLogFile="/media/HD3/cprocess_tmp/20012019125112/scripts/xcms.Rout",
+    #    tmpXcmsLogFile=NULL,
+    #    normLogFile="/media/HD3/cprocess_tmp/20012019125112/scripts/norm.Rout",
+    #    peaksRda="/media/HD3/cprocess_tmp/20012019125112/peaks.RData",
+    #    normRda=NULL,
+    #    tmpPath="/media/HD3/ctmp",
+    #    uploadedFiles=NULL,
+    #    filenames=c("2011-03-24_C3-3-3_NaCl_Run000010.cdf","2011-03-24_C3-3-3_NaCl_Run000011.cdf"),
+    #    classes=c("Ctrl","Ctrl")
+    #)
+    
+    load("/media/HD3/cprocess_tmp/20012019125112/peaks.RData")
+    
+    reactiveVars$pipelineResults <- reactiveValues(
+		peaks=peaks
+		#peaks=NULL
     )
     
     reactiveVars$timeFilter <- reactiveValues(
@@ -177,6 +208,7 @@ initReactiveVars <- function() {
         reactiveVars$resetPreprocess()
         reactiveVars$resetTimefilter()
         reactiveVars$resetNormalization()
+        reactiveVars$resetResults()
         
         # And the rest
          reactiveVars$spectrePlots <- reactiveValues(
@@ -216,17 +248,10 @@ initReactiveVars <- function() {
         # TODO: Fill the function
     }
     
-    #return(list(
-    #    pipelineControl=pipelineControl,
-    #    timeFilter=timeFilter,
-    #    readSpec=readSpec,
-    #    findPeaks=findPeaks,
-    #    groupPeaks=groupPeaks,
-    #    retcor=retcor,
-    #    extractPeaks=extractPeaks,
-    #    annotatePeaks=annotatePeaks,
-    #    spectrePlots=spectrePlots
-    #))
+    reactiveVars$resetResults <- function() {
+		reactiveVars$pipelineResults$peaks <- NULL
+	}
+    
     return(reactiveVars)
 }
 

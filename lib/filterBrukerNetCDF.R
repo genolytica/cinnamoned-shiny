@@ -63,9 +63,9 @@ filterBrukerNetCDF <- function(cdf.files,out.path=NULL,filter.time=c(900,3000),
     else if (is.character(missing.value) | is.na(missing.value))
         missing.type <- "NC_CHAR"
     else stop("The missing value must be numeric, character or NA.")
-    if (!is.null(filter.time) & length(filter.time)!=2)
+    if (!is.null(filter.time) && length(filter.time)!=2)
         stop("filter.time must be either NULL either a vector of length 2.")
-    if (!is.null(filter.mz) & length(filter.mz!=2))
+    if (!is.null(filter.mz) && length(filter.mz)!=2)
         stop("filter.mz must be either NULL either a vector of length 2.")
     if (!is.null(filter.inten) & length(filter.inten!=2))
         stop("filter.inten must be either NULL either a vector of length 2.")

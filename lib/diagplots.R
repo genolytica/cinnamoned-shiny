@@ -67,7 +67,8 @@ boxplot.mat <- function(mat,tam,name=NULL,log.it="auto",y.lim="default",
             tam.list[[i]] <- tam[,i]
     }
 
-    if (output!="same") # So as to be able to use par(mfxxx) from outside
+    if (!(output %in% c("same","shiny")))
+		# So as to be able to use par(mfxxx) from outside or Shiny
         openGraphics(output,fil)
 
     if (two)
@@ -83,7 +84,7 @@ boxplot.mat <- function(mat,tam,name=NULL,log.it="auto",y.lim="default",
             boxplot(tam.list,names=nams,ylim=c(min.y,max.y),col=cols,las=2,...)
     }
 
-    if (output!="same")
+    if (!(output %in% c("same","shiny")))
         closeGraphics(output)
 }
 
@@ -390,8 +391,7 @@ hist.zeros <- function(X,Y=NULL,what=c("each","total"),na=FALSE,output="x11",
     closeGraphics(output)
 }
 
-plot.mzrt <- function(rt,mz,inten=NULL,iset=NULL,output="x11",fil=NULL,...)
-{   
+plotMzrt <- function(rt,mz,inten=NULL,iset=NULL,output="x11",fil=NULL,...) {
     if (!is.null(inten)) {
         if (max(inten) > 107) { # How possible it is to have intensity>1e+32
             log.scaled <- FALSE
@@ -416,13 +416,17 @@ plot.mzrt <- function(rt,mz,inten=NULL,iset=NULL,output="x11",fil=NULL,...)
     }
 
     if (output!="same") { # So as to be able to use par(mfxxx) from outside
-        if (output %in% c("pdf","ps","x11"))
+        if (output=="shiny") {
+			# Silently nothing, intercept by Shiny?
+		}
+        else if (output %in% c("pdf","ps","x11"))
             openGraphics(output,fil,width=12,height=6)
         else
             openGraphics(output,fil,width=1200,height=600)
     }
 
-    # Time limits to be able to determine 30 second tickmarks and 60 second gridlines
+    # Time limits to be able to determine 30 second tickmarks and 60 second 
+    # gridlines
     xmin <- min(rt)-min(rt)%%60
     xmax <- max(rt)-max(rt)%%60+60
     at <- seq(xmin,xmax,by=30)
@@ -441,7 +445,7 @@ plot.mzrt <- function(rt,mz,inten=NULL,iset=NULL,output="x11",fil=NULL,...)
     if (!is.null(iset))
         points(rt[iset],mz[iset],pch=15,col="red",cex=1)
     
-    if (output!="same")
+    if (!(output %in% c("same","shiny")))
         closeGraphics(output)
 }
 

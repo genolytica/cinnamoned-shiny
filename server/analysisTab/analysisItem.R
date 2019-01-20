@@ -6,6 +6,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
     #timeFilter <- allReactiveVars$timeFilter
     #readSpec <- allReactiveVars$readSpec
     #findPeaks <- allReactiveVars$findPeaks
+    pipelineResult <- allReactiveVars$pipelineResult
     
     runPreprocess <- eventReactive(input$runPreprocessing,{
         # Get files and parameters from the control variables above
@@ -141,6 +142,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
                 footerId="preprocessCurrentStep"
             )
         )
+        pipelineResult$peaks <- peaks
         
         # 5c. Close the xcmsPipeline log file
         sink(type="message")
@@ -168,7 +170,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
         shinyjs::enable("resetPreprocessing")
         
         # Switch to timefilter status so that the UI can be rendered
-        #pipelineControl$step <- "timefilter" # Works! Tested.
+        pipelineControl$step <- "timefilter" # Works! Tested.
     })
     
     resetPreprocess <- eventReactive(input$resetPreprocessing,{
@@ -180,6 +182,9 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # Reset runtime variables
         allReactiveVars$resetTimefilter()
         allReactiveVars$resetPreprocess()
+        
+        allReactiveVars$pipelineInput$sampleInfoFile <- NULL
+        allReactiveVars$pipelineInput$classes <- NULL
         
         # Reset inputs
         updateNumericInput(session,inputId="filterTimeMin",
@@ -205,9 +210,56 @@ analysisTabPanelEventReactive <- function(input,output,session,
             value=allReactiveVars$findPeaks$max)
     })
     
+    resetToBack <- eventReactive(input$resetToBack,{
+        # Get files and parameters from the control variables above
+        # With these run the xcmsPipeline.R function
+        
+        pipelineControl$isRunning <- FALSE
+        
+        # Reset runtime variables
+        allReactiveVars$resetTimefilter()
+        allReactiveVars$resetPreprocess()
+        
+        # Reset inputs
+        updateNumericInput(session,inputId="filterTimeMin",
+            value=allReactiveVars$timeFilter$min)
+        updateNumericInput(session,inputId="filterTimeMax",
+            value=allReactiveVars$timeFilter$max)
+        updateNumericInput(session,inputId="filterTimeComparison",
+            value=allReactiveVars$timeFilter$max)
+        updateNumericInput(session,inputId="profileStep",
+            value=allReactiveVars$readSpec$profstep)
+        updateNumericInput(session,inputId="xcmsSNR",
+            value=allReactiveVars$findPeaks$snthresh)
+        updateNumericInput(session,inputId="xcmsEIBPCSize",
+            value=allReactiveVars$findPeaks$step)
+        updateNumericInput(session,inputId="xcmsFWHM",
+            value=allReactiveVars$findPeaks$fwhm)
+        updateNumericInput(session,inputId="xcmsSigma",
+            value=allReactiveVars$findPeaks$sigma)
+        updateNumericInput(session,inputId="xcmsEIBPCSteps",
+            value=allReactiveVars$findPeaks$steps)
+        updateNumericInput(session,inputId="xcmsEIBPCMaxPeaks",
+            value=allReactiveVars$findPeaks$max)
+            
+        # Go to the first page
+        pipelineControl$step <- "preprocess"
+    })
+    
+    resetTimeBoundaries <- eventReactive(input$resetTimeBoundaries,{
+    })
+    
+    proceedToNormalization <- eventReactive(input$proceedToNormalization,{
+		pipelineControl$isRunning <- FALSE
+		pipelineControl$step <- "normalization"
+	})
+    
     return(list(
         runPreprocess=runPreprocess,
-        resetPreprocess=resetPreprocess
+        resetPreprocess=resetPreprocess,
+        resetToBack=resetToBack,
+        resetTimeBoundaries=resetTimeBoundaries,
+        proceedToNormalization=proceedToNormalization
     ))
 }
 
@@ -215,11 +267,14 @@ analysisTabPanelReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
+    pipelineResults <- allReactiveVars$pipelineResults
     timeFilter <- allReactiveVars$timeFilter
     readSpec <- allReactiveVars$readSpec
     findPeaks <- allReactiveVars$findPeaks
     
     # Validators
+    
+    # Preprocessing validators
     validateProjectName <- reactive({
         n <- as.character(input$projectName)
         if (is.character(n)) {
@@ -233,7 +288,6 @@ analysisTabPanelReactive <- function(input,output,session,
                 return(FALSE)
             }
         }
-        
     })
     validateTimeFilterMin <- reactive({
         tMin <- as.numeric(input$filterTimeMin)
@@ -260,28 +314,27 @@ analysisTabPanelReactive <- function(input,output,session,
         }
     })
     validateTimeFilterComp <- reactive({
-      tComp <-  as.numeric(input$filterTimeMax)-as.numeric(input$filterTimeMin)
-      if (tComp < 0 || is.na(tComp)) {
-        pipelineControl$uiError <- TRUE
-        return(TRUE)
-      }
-      
-      else {
-        pipelineControl$uiError <- FALSE
-        return(FALSE)
-      }
+		tComp <-  
+			as.numeric(input$filterTimeMax)-as.numeric(input$filterTimeMin)
+		if (tComp < 0 || is.na(tComp)) {
+			pipelineControl$uiError <- TRUE
+			return(TRUE)
+		}
+		else {
+			pipelineControl$uiError <- FALSE
+			return(FALSE)
+		}
     })
     validateProfStep <- reactive({
-      pStep <- as.numeric(input$profileStep)
-      if (pStep <= 0 || is.na(pStep)) {
-        pipelineControl$uiError <- TRUE
-        return(TRUE)
-      }
-      
-      else {
-        pipelineControl$uiError <- FALSE
-        return(FALSE)
-      }
+		pStep <- as.numeric(input$profileStep)
+		if (pStep <= 0 || is.na(pStep)) {
+			pipelineControl$uiError <- TRUE
+			return(TRUE)
+		}
+		else {
+			pipelineControl$uiError <- FALSE
+			return(FALSE)
+		}
     })
     validateXcmsSNR <- reactive({
         snr <- as.numeric(input$xcmsSNR)
@@ -295,64 +348,118 @@ analysisTabPanelReactive <- function(input,output,session,
         }
     })
     validateXcmsEIBPCSize <- reactive({
-      eibpcsize <- as.numeric(input$xcmsEIBPCSize)
-      if (eibpcsize <= 0 || is.na(eibpcsize)) {
-        pipelineControl$uiError <- TRUE
-        return(TRUE)
-      }
-      
-      else {
-        pipelineControl$uiError <- FALSE
-        return(FALSE)
-      }
+		eibpcsize <- as.numeric(input$xcmsEIBPCSize)
+		if (eibpcsize <= 0 || is.na(eibpcsize)) {
+			pipelineControl$uiError <- TRUE
+			return(TRUE)
+		}
+		else {
+			pipelineControl$uiError <- FALSE
+			return(FALSE)
+		}
     })
     validateXcmsFWHM <- reactive({
-      fwhm <- as.numeric(input$xcmsFWHM)
-      if (fwhm <= 0 || is.na(fwhm)) {
-        pipelineControl$uiError <- TRUE
-        return(TRUE)
-      }
-      
-      else {
-        pipelineControl$uiError <- FALSE
-        return(FALSE)
-      }
+		fwhm <- as.numeric(input$xcmsFWHM)
+		if (fwhm <= 0 || is.na(fwhm)) {
+			pipelineControl$uiError <- TRUE
+			return(TRUE)
+		}
+		else {
+			pipelineControl$uiError <- FALSE
+			return(FALSE)
+		}
     })
     validateXcmsSigma <- reactive({
-      sigma <- as.numeric(input$xcmsSigma)
-      if (sigma < 0 || is.na(sigma)) {
-        pipelineControl$uiError <- TRUE
-        return(TRUE)
-      }
-      
-      else {
-        pipelineControl$uiError <- FALSE
-        return(FALSE)
-      }
+		sigma <- as.numeric(input$xcmsSigma)
+		if (sigma < 0 || is.na(sigma)) {
+			pipelineControl$uiError <- TRUE
+			return(TRUE)
+		}
+		else {
+			pipelineControl$uiError <- FALSE
+			return(FALSE)
+		}
     })
     validateXcmsEIBPCSteps <- reactive({
-      eibpcsteps <- as.numeric(input$xcmsEIBPCSteps)
-      if (eibpcsteps <= 0 || is.na(eibpcsteps)) {
-        pipelineControl$uiError <- TRUE
-        return(TRUE)
-      }
-      
-      else {
-        pipelineControl$uiError <- FALSE
-        return(FALSE)
-      }
+		eibpcsteps <- as.numeric(input$xcmsEIBPCSteps)
+		if (eibpcsteps <= 0 || is.na(eibpcsteps)) {
+			pipelineControl$uiError <- TRUE
+			return(TRUE)
+		}
+		else {
+			pipelineControl$uiError <- FALSE
+			return(FALSE)
+		}
     })
     validateXcmsEIBPCMaxPeaks <- reactive({
-      maxpeaks <- as.numeric(input$xcmsEIBPCMaxPeaks)
-      if (maxpeaks <= 0 || is.na(maxpeaks)) {
-        pipelineControl$uiError <- TRUE
-        return(TRUE)
-      }
-      
-      else {
-        pipelineControl$uiError <- FALSE
-        return(FALSE)
-      }
+		maxpeaks <- as.numeric(input$xcmsEIBPCMaxPeaks)
+		if (maxpeaks <= 0 || is.na(maxpeaks)) {
+			pipelineControl$uiError <- TRUE
+			return(TRUE)
+		}
+
+		else {
+			pipelineControl$uiError <- FALSE
+			return(FALSE)
+		}
+    })
+    # Post time filter validators
+    validatePostTimeFiltersMin <- reactive({
+		if (!is.null(pipelineInput$filenames)
+			&& pipelineControl$step=="timefilter"
+			&& !is.null(input$reviewMinTime_1)) {
+			valids <- lapply(1:length(pipelineInput$filenames),function(i) {
+				postMin <- as.numeric(input[[paste("reviewMinTime",i,sep="_")]])
+				if (postMin < 0 || is.na(postMin)) {
+					pipelineControl$uiError <- TRUE
+					return(TRUE)
+				}
+				else {
+					pipelineControl$uiError <- FALSE
+					return(FALSE)
+				}
+			})
+			return(unlist(valids))
+		}
+    })
+    
+    validatePostTimeFiltersMax <- reactive({
+		if (!is.null(pipelineInput$filenames)
+			&& pipelineControl$step=="timefilter"
+			&& !is.null(input$reviewMaxTime_1)) {
+			valids <- lapply(1:length(pipelineInput$filenames),function(i) {
+				postMax <- as.numeric(input[[paste("reviewMaxTime",i,sep="_")]])
+				if (postMax < 0 || is.na(postMax)) {
+					pipelineControl$uiError <- TRUE
+					return(TRUE)
+				}
+				else {
+					pipelineControl$uiError <- FALSE
+					return(FALSE)
+				}
+			})
+			return(unlist(valids))
+		}
+    })
+    
+    validatePostTimeFiltersComp <- reactive({
+		if (!is.null(pipelineInput$filenames)
+			&& pipelineControl$step=="timefilter"
+			&& !is.null(input$reviewMaxTime_1)) {
+			valids <- lapply(1:length(pipelineInput$filenames),function(i) {
+				tComp <- as.numeric(input[[paste("reviewMaxTime",i,sep="_")]])-
+					as.numeric(input[[paste("reviewMinTime",i,sep="_")]])
+				if (tComp < 0 || is.na(tComp)) {
+					pipelineControl$uiError <- TRUE
+					return(TRUE)
+				}
+				else {
+					pipelineControl$uiError <- FALSE
+					return(FALSE)
+				}
+			})
+			return(unlist(valids))
+		}
     })
     
     # Uploaded files
@@ -371,6 +478,45 @@ analysisTabPanelReactive <- function(input,output,session,
                 return(as.character(input[[paste("className_",i,sep="")]]))
             })
     })
+    
+    # Spectral review plots
+    spectralReviewPlots <- reactive({
+		peaks <- pipelineResults$peaks
+		if (!is.null(peaks)) {
+			if (is.list(peaks)) {
+				for (i in 1:length(peaks)) {
+					output[[paste("rawSpectre",i,sep="_")]] <- renderPlot({
+						plotMzrt(peaks[[i]]$rt,peaks[[i]]$mz,
+						inten=peaks[[i]]$into,output="shiny")
+					})
+				}
+			}
+			else
+				output[["rawSpectre_1"]] <- renderPlot({
+					plotMzrt(peaks$rt,peaks$mz,output="shiny")
+				})
+		}
+	})
+	
+	# Time filer boxplots
+	doTimeFilterReview <- reactive({
+		if (!is.null(pipelineInput$filenames) 
+			&& pipelineControl$step=="timefilter"
+			&& !is.null(input$reviewTime_1)) {
+			lapply(1:length(pipelineInput$filenames),function(i) {
+				if (input[[paste("reviewTime",i,sep="_")]]) {
+					timeFilter$do <- TRUE
+					shinyjs::enable(paste("reviewMinTime",i,sep="_"))
+					shinyjs::enable(paste("reviewMaxTime",i,sep="_"))
+				}
+				else {
+					timeFilter$do <- FALSE
+					shinyjs::disable(paste("reviewMinTime",i,sep="_"))
+					shinyjs::disable(paste("reviewMaxTime",i,sep="_"))
+				}
+			})
+		}
+	})
     
     # Conditional panel status according to analysis status
     output$panelStatus <- reactive({
@@ -420,7 +566,12 @@ analysisTabPanelReactive <- function(input,output,session,
         uploadFiles=uploadFiles,
         validateXcmsEIBPCSteps=validateXcmsEIBPCSteps,
         validateXcmsEIBPCMaxPeaks=validateXcmsEIBPCMaxPeaks,
-        classNames=classNames
+        classNames=classNames,
+        spectralReviewPlots=spectralReviewPlots,
+        doTimeFilterReview=doTimeFilterReview,
+        validatePostTimeFiltersMin=validatePostTimeFiltersMin,
+        validatePostTimeFiltersMax=validatePostTimeFiltersMax,
+        validatePostTimeFiltersComp=validatePostTimeFiltersComp
     ))
 }
 
@@ -428,6 +579,7 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
+    timeFilter <- allReactiveVars$timeFilter
     
     # Filenames and classes
     output$sampleInfoEdit <- renderUI({
@@ -472,29 +624,60 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
                     wellPanel(
                         h4("Spectral plot for ",basename(n[i])),
                         br(),
-                        plotOutput(paste("rawSpectre",i,sep="_")),
+                        plotOutput(paste("rawSpectre",i,sep="_"),
+							height="600px"),
                         br(),
-                        fluidRow(column(2,
-                            disabled(textInput(
+                        fluidRow(column(1,
+							div(
+								style="margin-top: 0px;",
+								switchInput(
+									inputId=paste("reviewTime",i,sep="_"),
+									label="Review time bounds",
+									onStatus="danger",
+									size="small"
+								)
+							)
+							#div(
+							#	style="margin-top: -10px;",
+							#	checkboxInput(
+							#		inputId=paste("reviewTime",i,sep="_"),
+							#		label="Review min time (seconds)", 
+							#		value=FALSE
+							#	)
+							#)
+                        ),column(2,
+                            disabled(numericInput(
                                 inputId=paste("reviewMinTime",i,sep="_"),
                                 label="Review min time (seconds)", 
-                                value=""
-                            ))
+                                value=timeFilter$min,
+                                min=0
+                            )),
+                            div(id=paste("filterTimeMinError",i,sep="_"),
+								class="input-error",
+								errorMessages$filterTimeMin)
                         ),column(2,
-                            disabled(textInput(
+                            disabled(numericInput(
                                 inputId=paste("reviewMaxTime",i,sep="_"),
                                 label="Review max time (seconds)", 
-                                value=""
-                            ))
-                        ),column(8,"Buttons"
-                        )),
+                                value=timeFilter$max,
+                                min=0
+                            )),
+                            div(id=paste("filterTimeMaxError",i,sep="_"),
+								class="input-error",
+								errorMessages$filterTimeMax)
+                        ),column(7," "
+                        ),
+                        div(
+							id=paste("filterTimeCompError",i,sep="_"),
+							class="input-error",
+							errorMessages$filterTimeComparison
+						)),
                         class="well-panel"
                     )
                 ))
             },pipelineInput$filenames)
         }
     })
-    #pipelineInput$dataPath
 }
 
 analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
@@ -509,12 +692,17 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     
     runPreprocess <- analysisTabPanelReactiveEvents$runPreprocess
     resetPreprocess <- analysisTabPanelReactiveEvents$resetPreprocess
+    resetToBack <- analysisTabPanelReactiveEvents$resetToBack
+	resetTimeBoundaries <- analysisTabPanelReactiveEvents$resetTimeBoundaries
+	proceedToNormalization <- 
+		analysisTabPanelReactiveEvents$proceedToNormalization
     
     # Initialize observing reactive expressions
     analysisTabPanelReactiveExprs <- 
         analysisTabPanelReactive(input,output,session,allReactiveVars,
             allReactiveMsgs)
-        
+    
+    # Preprocessing validators    
     validateProjectName <- 
         analysisTabPanelReactiveExprs$validateProjectName
     validateTimeFilterMin <- 
@@ -527,7 +715,6 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
       analysisTabPanelReactiveExprs$validateProfStep
     validateXcmsSNR <- 
         analysisTabPanelReactiveExprs$validateXcmsSNR
-    #TODO: Retrieve all the rest fields defined in analysisTabPanelReactive - DONE?
     validateXcmsEIBPCSize <- 
       analysisTabPanelReactiveExprs$validateXcmsEIBPCSize
     validateXcmsFWHM <- 
@@ -538,9 +725,19 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
       analysisTabPanelReactiveExprs$validateXcmsEIBPCSteps
     validateXcmsEIBPCMaxPeaks <- 
       analysisTabPanelReactiveExprs$validateXcmsEIBPCMaxPeaks
+	
+	# Timefilter validator
+	validatePostTimeFiltersMin <- 
+		analysisTabPanelReactiveExprs$validatePostTimeFiltersMin
+	validatePostTimeFiltersMax <- 
+		analysisTabPanelReactiveExprs$validatePostTimeFiltersMax
+	validatePostTimeFiltersComp <-
+		analysisTabPanelReactiveExprs$validatePostTimeFiltersComp
 
     uploadFiles <- analysisTabPanelReactiveExprs$uploadFiles
     classNames <- analysisTabPanelReactiveExprs$classNames
+    spectralReviewPlots <- analysisTabPanelReactiveExprs$spectralReviewPlots
+    doTimeFilterReview <- analysisTabPanelReactiveExprs$doTimeFilterReview
     
     # Initialize UI element reactivity  
     analysisTabPanelRenderUI(output,session,allReactiveVars,allReactiveMsgs)
@@ -578,8 +775,6 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         else
             shinyjs::hide("xcmsSNRError")
             
-        # TODO: All the rest validators - DONE?
-
         if (validateXcmsEIBPCSize())
             shinyjs::show("xcmsEIBPCSizeError")
         else
@@ -604,6 +799,48 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
             shinyjs::show("xcmsEIBPCMaxPeaksError")
         else
             shinyjs::hide("xcmsEIBPCMaxPeaksError")
+            
+        if (any(validatePostTimeFiltersMin())) {
+			valids <- validatePostTimeFiltersMin()
+			lapply(1:length(valids),function(i,v) {
+				if (v[i])
+					shinyjs::show(paste("filterTimeMinError",i,sep="_"))
+				else
+					shinyjs::hide(paste("filterTimeMinError",i,sep="_"))
+			},valids)
+		}
+		else
+			lapply(1:length(pipelineInput),function(i) {
+				shinyjs::hide(paste("filterTimeMinError",i,sep="_"))
+			})
+		
+		if (any(validatePostTimeFiltersMax())) {
+			valids <- validatePostTimeFiltersMax()
+			lapply(1:length(valids),function(i,v) {
+				if (v[i])
+					shinyjs::show(paste("filterTimeMaxError",i,sep="_"))
+				else
+					shinyjs::hide(paste("filterTimeMaxError",i,sep="_"))
+			},valids)
+		}
+		else
+			lapply(1:length(pipelineInput),function(i) {
+				shinyjs::hide(paste("filterTimeMaxError",i,sep="_"))
+			})
+		
+		if (any(validatePostTimeFiltersComp())) {
+			valids <- validatePostTimeFiltersComp()
+			lapply(1:length(valids),function(i,v) {
+				if (v[i])
+					shinyjs::show(paste("filterTimeCompError",i,sep="_"))
+				else
+					shinyjs::hide(paste("filterTimeCompError",i,sep="_"))
+			},valids)
+		}
+		else
+			lapply(1:length(pipelineInput),function(i) {
+				shinyjs::hide(paste("filterTimeCompError",i,sep="_"))
+			})
     })
     
     # If a validator fails or requirements not met, disable the run button
@@ -643,5 +880,14 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     observe({
         resetPreprocess()
     })
+    
+    # Timefilter functions
+    observe({
+		spectralReviewPlots()
+		doTimeFilterReview()
+		resetToBack()
+        resetTimeBoundaries()
+        proceedToNormalization()
+	})
 
 }
