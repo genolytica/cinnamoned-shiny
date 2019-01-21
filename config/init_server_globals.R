@@ -33,11 +33,19 @@ errorMessages <- list(
     filterTimeComparison="Maximum time must be greater than Minimum time!",
     profileStep="Profile reading step must be an integer greater than 0!",
     xcmsSNR="Signal to noise ratio must be a real number greater than 0!",
-    xcmsEIBPCSize="EIBPC step size must be an integer greater than 0!",
+    xcmsEIBPCSize="EIBPC step size must be a real number greater than 0!",
     xcmsFWHM="Full width at half maximum must be an integer greater than 0!",
     xcmsSigma="Peak model standard deviation (sigma) must be an integer >= 0!",
     xcmsEIBPCSteps="EIBPC steps to combine must be an integer greater than 0!",
-    xcmsEIBPCMaxPeaks="Maximum peaks per EIBPC must be an integer greater than 0!"
+    xcmsEIBPCMaxPeaks="Maximum peaks per EIBPC must be an integer greater than 0!",
+    mzTol="m/z tolerance must be a real number greater than 0!",
+    tSpan="LOESS span must be a real number >= 0!",
+    It="Alignment algorithm iterrations must be a real number >= 0!",
+    corrFac="LOESS singularity correction factor must be a real number >= 0!",
+    cutQ="RT deviation exclusion quantile real number >= 0!",
+    iSpan="LOESS span must be a real number >= 0!",
+    corrFacNS="Non-standards correction factor must be a real number >= 0!"
+    
 )
 
 # Maximum filesize

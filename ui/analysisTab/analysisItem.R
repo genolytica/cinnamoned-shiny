@@ -397,7 +397,9 @@ analysisTabPanelNormalization <- function() {
                           inputId="mztol", 
                           label = "m/z tolerance:", 
                           value = 0.1 
-                     )
+                     ),
+                     div(id="mzTolError",class="input-error",
+                     	errorMessages$mzTol)
                   )
                 ),
               fluidRow(column(4,
@@ -430,16 +432,16 @@ analysisTabPanelNormalization <- function() {
                           label="LOESS span:", 
                           value="0"
                       ),
-                      div(id="xcmsSNRError",class="input-error",
-                          errorMessages$xcmsSNR)
+                      div(id="tSpanError",class="input-error",
+                          errorMessages$tSpan)
                   ),column(6,
                         textInput(
                             inputId="it", 
                             label="Alignment algorithm iterrations:", 
                             value="3"
                         ),
-                        div(id="xcmsEIBPCSizeError",class="input-error",
-                            errorMessages$xcmsEIBPCSize)
+                        div(id="itError",class="input-error",
+                            errorMessages$It)
                   )),
                   fluidRow(column(6,
                       textInput(
@@ -447,16 +449,16 @@ analysisTabPanelNormalization <- function() {
                           label="LOESS singularity correction factor:", 
                           value="2"
                       ),
-                      div(id="xcmsSNRError",class="input-error",
-                          errorMessages$xcmsSNR)
+                      div(id="corrFacError",class="input-error",
+                          errorMessages$corrFac)
                   ),column(6,
                       textInput(
                           inputId="cutq", 
                           label="RT deviation exclusion quantile:", 
                           value="0.98"
                       ),
-                      div(id="xcmsEIBPCSizeError",class="input-error",
-                          errorMessages$xcmsEIBPCSize)
+                      div(id="cutQError",class="input-error",
+                          errorMessages$cutQ)
                   ))
           ),
           wellPanel(
@@ -481,17 +483,17 @@ analysisTabPanelNormalization <- function() {
                       label="LOESS span:", 
                       value="0"
                       ),
-                      div(id="xcmsEIBPCSizeError",class="input-error",
-                          errorMessages$xcmsEIBPCSize)
+                      div(id="iSpanError",class="input-error",
+                          errorMessages$iSpan)
                   )),
                   fluidRow(column(6,
                       textInput(
-                          inputId="corrfac", 
+                          inputId="corrfacNS", 
                           label="Non-standards correction factor:", 
                           value="2"
                       ),
-                      div(id="xcmsSNRError",class="input-error",
-                          errorMessages$xcmsSNR)
+                      div(id="corrFacNSError",class="input-error",
+                          errorMessages$corrFacNS)
                   ))
             ),
             fluidRow(br()),

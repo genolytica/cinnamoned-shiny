@@ -505,6 +505,92 @@ analysisTabPanelReactive <- function(input,output,session,
 		}
     })
     
+    # Normalization Validators
+    validatemzTol <- reactive({
+      	mztol <- as.numeric(input$mztol)
+      	if (mztol <= 0 || is.na(mztol)) {
+        	pipelineControl$uiError <- TRUE
+        return(TRUE)
+      	}
+      	else {
+        	pipelineControl$uiError <- FALSE
+        return(FALSE)
+      	}
+    })
+
+    validatetSpan <- reactive({
+    	tspan <- as.numeric(input$tspan)
+    	if (tspan < 0 || is.na(tspan)) {
+        	pipelineControl$uiError <- TRUE
+        return(TRUE)
+      	}
+      	else {
+        	pipelineControl$uiError <- FALSE
+        return(FALSE)
+      	}
+    })
+
+    validateIt <- reactive({
+    	it <- as.numeric(input$it)
+    	if (it < 0 || is.na(it)) {
+        	pipelineControl$uiError <- TRUE
+        return(TRUE)
+      	}
+      	else {
+        	pipelineControl$uiError <- FALSE
+        return(FALSE)
+      	}
+    })
+
+    validateCorrFac <- reactive({
+    	corrfac <- as.numeric(input$corrfac)
+    	if (corrfac < 0 || is.na(corrfac)) {
+        	pipelineControl$uiError <- TRUE
+        return(TRUE)
+      	}
+      	else {
+        	pipelineControl$uiError <- FALSE
+        return(FALSE)
+      	}
+    })
+
+    validateCutQ <- reactive({
+    	cutq <- as.numeric(input$cutq)
+    	if (cutq < 0 || is.na(cutq)) {
+        	pipelineControl$uiError <- TRUE
+        return(TRUE)
+      	}
+      	else {
+        	pipelineControl$uiError <- FALSE
+        return(FALSE)
+      	}
+    })
+    
+    validateiSpan <- reactive({
+    	ispan <- as.numeric(input$ispan)
+    	if (ispan < 0 || is.na(ispan)) {
+        	pipelineControl$uiError <- TRUE
+        return(TRUE)
+      	}
+      	else {
+        	pipelineControl$uiError <- FALSE
+        return(FALSE)
+      	}
+    })
+    
+    validateCorrFacNS <- reactive({
+    	corrfacns <- as.numeric(input$corrfacNS)
+    	if (corrfacns < 0 || is.na(corrfacns)) {
+        	pipelineControl$uiError <- TRUE
+        return(TRUE)
+      	}
+      	else {
+        	pipelineControl$uiError <- FALSE
+        return(FALSE)
+      	}
+    })
+
+
     # Uploaded files
     uploadFiles <- reactive({
         if (!is.null(input$projectFiles)) {
@@ -614,7 +700,15 @@ analysisTabPanelReactive <- function(input,output,session,
         doTimeFilterReview=doTimeFilterReview,
         validatePostTimeFiltersMin=validatePostTimeFiltersMin,
         validatePostTimeFiltersMax=validatePostTimeFiltersMax,
-        validatePostTimeFiltersComp=validatePostTimeFiltersComp
+        validatePostTimeFiltersComp=validatePostTimeFiltersComp,
+        validatemzTol=validatemzTol,
+        validatetSpan=validatetSpan,
+        validateIt=validateIt,
+        validateCorrFac=validateCorrFac,
+        validateCutQ=validateCutQ,
+        validateiSpan=validateiSpan,
+        validateCorrFacNS=validateCorrFacNS,
+        classNames=classNames
     ))
 }
 
@@ -776,6 +870,23 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
 		analysisTabPanelReactiveExprs$validatePostTimeFiltersMax
 	validatePostTimeFiltersComp <-
 		analysisTabPanelReactiveExprs$validatePostTimeFiltersComp
+	
+	# Normalization validator
+	validatemzTol <- 
+    	analysisTabPanelReactiveExprs$validatemzTol
+    validatetSpan <- 
+    	analysisTabPanelReactiveExprs$validatetSpan
+    validateIt <- 
+    	analysisTabPanelReactiveExprs$validateIt
+    validateCorrFac <- 
+    	analysisTabPanelReactiveExprs$validateCorrFac
+    validateCutQ <-
+    	analysisTabPanelReactiveExprs$validateCutQ
+    validateiSpan <-
+    	analysisTabPanelReactiveExprs$validateiSpan
+    validateCorrFacNS <- 
+    	analysisTabPanelReactiveExprs$validateCorrFacNS
+
 
     uploadFiles <- analysisTabPanelReactiveExprs$uploadFiles
     classNames <- analysisTabPanelReactiveExprs$classNames
@@ -842,7 +953,9 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
             shinyjs::show("xcmsEIBPCMaxPeaksError")
         else
             shinyjs::hide("xcmsEIBPCMaxPeaksError")
-            
+    	
+        # Time filter Page Validator Observers
+    	
         if (any(validatePostTimeFiltersMin())) {
 			valids <- validatePostTimeFiltersMin()
 			lapply(1:length(valids),function(i,v) {
@@ -884,6 +997,39 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
 			lapply(1:length(pipelineInput),function(i) {
 				shinyjs::hide(paste("filterTimeCompError",i,sep="_"))
 			})
+
+    	# Normalization Page Validator Observers
+    	
+        if (validatemzTol())
+            shinyjs::show("mzTolError")
+        else
+            shinyjs::hide("mzTolError")
+
+        if (validatetSpan())
+            shinyjs::show("tSpanError")
+        else
+            shinyjs::hide("tSpanError")
+        if (validateIt())
+            shinyjs::show("itError")
+        else
+            shinyjs::hide("itError")
+        if (validateCorrFac())
+            shinyjs::show("corrFacError")
+        else
+            shinyjs::hide("corrFacError")
+        if (validateCutQ())
+            shinyjs::show("cutQError")
+        else
+            shinyjs::hide("cutQError")
+    	if (validateiSpan())
+            shinyjs::show("iSpanError")
+        else
+            shinyjs::hide("iSpanError")
+        if (validateCorrFacNS())
+            shinyjs::show("corrFacNSError")
+        else
+            shinyjs::hide("corrFacNSError")
+
     })
     
     # If a validator fails or requirements not met, disable the run button
