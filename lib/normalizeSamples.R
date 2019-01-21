@@ -15,11 +15,13 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
     normalize=c("loess","rlm","lm","simple","cluster"),
     correctfor=c("both","time","intensity","none"),time.range=NULL,tol=0.01,
     tspan=0.75,ispan=0.75,tit=3,corrfac=2,export=NULL,cutrat=2,cutq=0.98,
-    diagplot=NULL,plottype="x11",export.type=c("all","armada","none")) {
+    diagplot=NULL,plottype="x11",export.type=c("all","armada","none"),
+    shinyProgressData=NULL) {
     meta.data <- tryCatch(attr(peaks,"meta.data"),
         error=function(e) { 
             return(NULL) 
     },finally="")
+    
     if (!is.list(peaks)) {
         p <- list()
         p[[1]] <- peaks
@@ -30,16 +32,12 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
         peaks <- p
     }
 
+    # Replace this with sqlite connection
     if (missing(dbdata)) {
-        if (!require(RCurl))
-            stop("R package RCurl is required OR provide database connection ",
-                "data!")
-        else {
-            dbdata <- getdbdata()
-            dbdata[1] <- base64Decode(dbdata[1])
-            dbdata[2] <- base64Decode(dbdata[2])
-        }
+        stop("The path to the SQLite database with metabolite data must ",
+            "specified!")
     }
+    
     if (!is.null(diagplot)) {
         if (plottype=="x11") {
             warning("Plotting output has been specified... Changing plot type ",
@@ -126,7 +124,16 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
     match.ref <- iset.match <- matched <- iset.inten <- 
         vector("list",length(peaks))
 
-    cat("\nNormalizing peaks using standards from reference database...\n")
+    message("Normalizing peaks using standards from reference database...")
+    ########################################################################
+    updateShinyProgressBar(
+        shinyProgressData=shinyProgressData,
+        pbValue=15,
+        headerMsg=paste("Normalizing peaks using standards from reference ",
+            "database...",sep=""),
+        footerMsg="Matching new m/z with reference..."
+    )
+    ########################################################################
     
     # Match!
     for (i in 1:length(peaks))
@@ -336,4 +343,26 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
 
 match.mz.fun <- function(x,ref,tol=0.01) {
     return(match.mz(x$mz,ref,tol=tol))
+}
+
+updateShinyProgressBar <- function(shinyProgressData,pbValue,headerMsg="",
+    footerMsg="") {
+    
+    if (is.null(shinyProgressData))
+        return()
+    
+    if (is.null(shinyProgressData$progressTotal))
+        shinyProgressData$progressTotal <- 100
+    
+    updateProgressBar(
+        session=shinyProgressData$session,
+        id=shinyProgressData$progressId,
+        value=pbValue,
+        total=shinyProgressData$progressTotal
+    )
+    
+    shinyProgressData$session$sendCustomMessage(
+        "changeProgressHeader",list(value=headerMsg))
+    shinyProgressData$session$sendCustomMessage(
+        "changeProgressFooter",list(value=footerMsg))
 }

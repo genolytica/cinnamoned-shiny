@@ -111,8 +111,7 @@ xcmsPipeline <- function(path.to.raw,info.file,param.file,path.to.trunc=NULL,
     updateShinyProgressBar(
         shinyProgressData=shinyProgressData,
         pbValue=15,
-        headerMsg=paste("Processing filtered files...",
-            collapse=""),
+        headerMsg="Processing filtered files...",
         footerMsg="Calling peaks with xcms..."
     )
     ########################################################################
