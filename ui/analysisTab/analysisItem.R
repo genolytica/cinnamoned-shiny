@@ -310,47 +310,47 @@ analysisTabPanelPreprocess <- function() {
 }
 
 analysisTabPanelTimefilter <- function() {
-	fluidRow(column(12,wellPanel(
-		fluidRow(column(12,
-			h2("Review retiention time boundaries"),
-			h3(paste("Please inspect the following spectral figures of the ",
-				"detected peaks and adjust time as necessary.")),
-			hr(),
-			htmlOutput("spectralInspection")
-		)),
-		fluidRow(column(4,
-			div(
-				class="pull-left",
-				style="display:inline-block",
-				actionButton(
-					inputId="resetToBack",
-					label="Reset all",
-					icon=icon("exclamation-triangle")
-				)
-			),
-			div(
-				class="pull-right",
-				style="display:inline-block",
-				actionButton(
-					inputId="resetTimeBoundaries",
-					label="Reset times",
-					icon=icon("undo")
-				)
-			)
-		),column(8,
-			div(
-				class="pull-right",
-				style="display:inline-block",
-				actionButton(
-					inputId="proceedToNormalization",
-					label="Next",
-					icon=icon("arrow-right"),
-					class="btn-primary"
-				)
-			)
-		)),
-		class="well-panel"
-	)))
+    fluidRow(column(12,wellPanel(
+        fluidRow(column(12,
+            h2("Review retiention time boundaries"),
+            h3(paste("Please inspect the following spectral figures of the ",
+                "detected peaks and adjust time as necessary.")),
+            hr(),
+            htmlOutput("spectralInspection")
+        )),
+        fluidRow(column(4,
+            div(
+                class="pull-left",
+                style="display:inline-block",
+                actionButton(
+                    inputId="resetToBack",
+                    label="Reset all",
+                    icon=icon("exclamation-triangle")
+                )
+            ),
+            div(
+                class="pull-right",
+                style="display:inline-block",
+                actionButton(
+                    inputId="resetTimeBoundaries",
+                    label="Reset times",
+                    icon=icon("undo")
+                )
+            )
+        ),column(8,
+            div(
+                class="pull-right",
+                style="display:inline-block",
+                actionButton(
+                    inputId="proceedToNormalization",
+                    label="Next",
+                    icon=icon("arrow-right"),
+                    class="btn-primary"
+                )
+            )
+        )),
+        class="well-panel"
+    )))
 }
 
 analysisTabPanelNormalization <- function() {
@@ -399,7 +399,7 @@ analysisTabPanelNormalization <- function() {
                           value = 0.1 
                      ),
                      div(id="mzTolError",class="input-error",
-                     	errorMessages$mzTol)
+                        errorMessages$mzTol)
                   )
                 ),
               fluidRow(column(4,

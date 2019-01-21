@@ -4,11 +4,10 @@ initReactiveVars <- function() {
     reactiveVars <- new.env(parent=emptyenv())
     
     reactiveVars$pipelineControl <- reactiveValues(
-        step="preprocess",
-        #step="timefilter",
+        #step="preprocess",
+        step="timefilter",
         #step="normalization"
         #step="result"
-        isRunning=FALSE,
         filesUploaded=FALSE,
         sampleInfoFilled=FALSE,
         uiError=FALSE
@@ -40,34 +39,35 @@ initReactiveVars <- function() {
     )
     
     #reactiveVars$pipelineInput <- reactiveValues(
-    #    currentRunId="20012019125112",
+    #    currentRunId="21012019193711",
     #    basePath="/media/HD3/cprocess_tmp",
-    #    runPath="/media/HD3/cprocess_tmp/20012019125112",
-    #    dataPath="/media/HD3/cprocess_tmp/20012019125112/data",
-    #    dataPathRaw="/media/HD3/cprocess_tmp/20012019125112/data/raw",
-    #    dataPathTrunc="/media/HD3/cprocess_tmp/20012019125112/data/trunc",
-    #    diagPath="/media/HD3/cprocess_tmp/20012019125112/diagnostic",
-    #    diagPathPreprocess="/media/HD3/cprocess_tmp/20012019125112/diagnostic/preprocess",
-    #    diagPathNormallzation="/media/HD3/cprocess_tmp/20012019125112/diagnostic/normalization",
-    #    scriptPath="/media/HD3/cprocess_tmp/20012019125112/scripts",
-    #    sampleInfoFile="/media/HD3/cprocess_tmp/20012019125112/sample_info.txt",
-    #    xcmsParamFile="/media/HD3/cprocess_tmp/20012019125112/scripts/xcms.yml",
-    #    xcmsLogFile="/media/HD3/cprocess_tmp/20012019125112/scripts/xcms.Rout",
+    #    runPath="/media/HD3/cprocess_tmp/21012019193711",
+    #    dataPath="/media/HD3/cprocess_tmp/21012019193711/data",
+    #    dataPathRaw="/media/HD3/cprocess_tmp/21012019193711/data/raw",
+    #    dataPathTrunc="/media/HD3/cprocess_tmp/21012019193711/data/trunc",
+    #    diagPath="/media/HD3/cprocess_tmp/21012019193711/diagnostic",
+    #    diagPathPreprocess="/media/HD3/cprocess_tmp/21012019193711/diagnostic/preprocess",
+    #    diagPathNormallzation="/media/HD3/cprocess_tmp/21012019193711/diagnostic/normalization",
+    #    scriptPath="/media/HD3/cprocess_tmp/21012019193711/scripts",
+    #    sampleInfoFile="/media/HD3/cprocess_tmp/21012019193711/sample_info.txt",
+    #    xcmsParamFile="/media/HD3/cprocess_tmp/21012019193711/scripts/xcms.yml",
+    #    xcmsLogFile="/media/HD3/cprocess_tmp/21012019193711/scripts/xcms.Rout",
     #    tmpXcmsLogFile=NULL,
-    #    normLogFile="/media/HD3/cprocess_tmp/20012019125112/scripts/norm.Rout",
-    #    peaksRda="/media/HD3/cprocess_tmp/20012019125112/peaks.RData",
+    #    normLogFile="/media/HD3/cprocess_tmp/21012019193711/scripts/norm.Rout",
+    #    peaksRda="/media/HD3/cprocess_tmp/21012019193711/peaks.RData",
     #    normRda=NULL,
     #    tmpPath="/media/HD3/ctmp",
     #    uploadedFiles=NULL,
     #    filenames=c("2011-03-24_C3-3-3_NaCl_Run000010.cdf","2011-03-24_C3-3-3_NaCl_Run000011.cdf"),
-    #    classes=c("Ctrl","Ctrl")
+    #    classes=c("Ctrl","Ctrl"),
+    #    refinedTimeBoundaries=NULL
     #)
     
-    load("/media/HD3/cprocess_tmp/20012019125112/peaks.RData")
+    #load("/media/HD3/cprocess_tmp/21012019193711/peaks.RData")
     
     reactiveVars$pipelineResults <- reactiveValues(
-		peaks=peaks
-		#peaks=NULL
+        #peaks=peaks
+        peaks=NULL
     )
     
     reactiveVars$timeFilter <- reactiveValues(
@@ -250,8 +250,8 @@ initReactiveVars <- function() {
     }
     
     reactiveVars$resetResults <- function() {
-		reactiveVars$pipelineResults$peaks <- NULL
-	}
+        reactiveVars$pipelineResults$peaks <- NULL
+    }
     
     return(reactiveVars)
 }
