@@ -404,7 +404,7 @@ analysisTabPanelNormalization <- function() {
                 ),
               fluidRow(column(4,
                   checkboxInput(
-                      inputId="diagPlots", 
+                      inputId="diagPlotsInclude", 
                       label = "Plot diagnostics", 
                       value = TRUE
                   )
@@ -512,12 +512,12 @@ analysisTabPanelNormalization <- function() {
                 div(
                     class="pull-right",
                     style="display:inline-block",
-                     disabled(actionButton(
-                        inputId="runNormalization",
-                        label="Energize!",
-                        icon=icon("bolt"),
-                        class="btn-primary"
-                     ))
+                    	actionButton(
+                        	inputId="runNormalization",
+                        	label="Energize!",
+                        	icon=icon("bolt"),
+                        	class="btn-primary"
+                     	)
                    )
           ))
     ))

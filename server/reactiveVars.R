@@ -119,7 +119,7 @@ initReactiveVars <- function() {
         minsamp=1,
         sleep=0
     )
-    
+
     reactiveVars$retcor <- reactiveValues(
         method=c("loess","obiwarp"),
         missing=1,
@@ -225,7 +225,7 @@ initReactiveVars <- function() {
         # TODO: Fill the function - DONE?
       
         # Reset readSpec
-        reactiveVars$readSpec$profstep <- 1
+        reactiveVars$readSpec$profstep  <- 1
         # Reset findPeaks
         reactiveVars$findPeaks$snthresh <- 7
         reactiveVars$findPeaks$step     <- 0.1
@@ -245,8 +245,19 @@ initReactiveVars <- function() {
     }
 
     reactiveVars$resetNormalization <- function() {
-        # Reset groupPeaks, retcor, extractPeaks, annotatePeaks
-        # TODO: Fill the function
+    	reactiveVars$normPeaks$method           <- 'geom'
+    	reactiveVars$normPeaks$correctfor       <- 'both'
+    	reactiveVars$normPeaks$mztol            <- 0.1
+    	reactiveVars$normPeaks$diagPlotsInclude <- TRUE
+    	reactiveVars$normPeaks$export           <- 'all'
+    	reactiveVars$normPeaks$tspan            <- 0
+    	reactiveVars$normPeaks$it               <- 3
+    	reactiveVars$normPeaks$corrfac          <- 2
+    	reactiveVars$normPeaks$cutq             <- 0.98
+    	reactiveVars$normPeaks$diagPlots        <- 'rlm'
+    	reactiveVars$normPeaks$ispan            <- 0
+    	reactiveVars$normPeaks$corrfacNS        <- 2
+    	reactiveVars$normPeaks$method           <- 'geom'
     }
     
     reactiveVars$resetResults <- function() {
