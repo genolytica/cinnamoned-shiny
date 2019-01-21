@@ -29,7 +29,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
         shinyjs::disable("projectFiles")
         shinyjs::disable("sampleInfoFile")
         shinyjs::disable("resetPreprocessing")
-        
+        shinyjs::disable("resetNormalization")
+
         # 1. Create the directory structure
         # 1a. Define the structure
         pipelineInput$currentRunId <- format(Sys.time(),"%d%m%Y%H%M%S")
@@ -168,6 +169,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
         shinyjs::enable("projectFiles")
         shinyjs::enable("sampleInfoFile")
         shinyjs::enable("resetPreprocessing")
+        shinyjs::enable("resetNormalization")
         
         # Switch to timefilter status so that the UI can be rendered
         pipelineControl$step <- "timefilter" # Works! Tested.
@@ -182,6 +184,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # Reset runtime variables
         allReactiveVars$resetTimefilter()
         allReactiveVars$resetPreprocess()
+        allReactiveVars$resetNormalization()
         
         allReactiveVars$pipelineInput$sampleInfoFile <- NULL
         allReactiveVars$pipelineInput$classes <- NULL
@@ -192,8 +195,6 @@ analysisTabPanelEventReactive <- function(input,output,session,
         updateNumericInput(session,inputId="filterTimeMax",
             value=allReactiveVars$timeFilter$max)
         #TODO: All the rest inputs - DONE?
-        updateNumericInput(session,inputId="filterTimeComparison",
-            value=allReactiveVars$timeFilter$max)
         updateNumericInput(session,inputId="profileStep",
             value=allReactiveVars$readSpec$profstep)
         updateNumericInput(session,inputId="xcmsSNR",
@@ -219,13 +220,12 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # Reset runtime variables
         allReactiveVars$resetTimefilter()
         allReactiveVars$resetPreprocess()
+        allReactiveVars$resetNormalization()
         
         # Reset inputs
         updateNumericInput(session,inputId="filterTimeMin",
             value=allReactiveVars$timeFilter$min)
         updateNumericInput(session,inputId="filterTimeMax",
-            value=allReactiveVars$timeFilter$max)
-        updateNumericInput(session,inputId="filterTimeComparison",
             value=allReactiveVars$timeFilter$max)
         updateNumericInput(session,inputId="profileStep",
             value=allReactiveVars$readSpec$profstep)
@@ -245,7 +245,46 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # Go to the first page
         pipelineControl$step <- "preprocess"
     })
-    
+    resetNormalization <- eventReactive(input$resetNormalization,{
+        # Get files and parameters from the control variables above
+        # With these run the xcmsPipeline.R function
+        
+        pipelineControl$isRunning <- FALSE
+        
+        # Reset runtime variables
+        allReactiveVars$resetTimefilter()
+        allReactiveVars$resetPreprocess()
+        allReactiveVars$resetNormalization()
+        
+        # Reset inputs
+        updateSelectInput(session,inputId="method",
+            selected=allReactiveVars$normPeaks$method)
+        updateSelectInput(session,inputId="correctfor",
+            selected=allReactiveVars$normPeaks$correctfor)
+        updateNumericInput(session,inputId="mztol",
+            value=allReactiveVars$normPeaks$mztol)
+        updateCheckboxInput(session,inputId="diagPlotsInclude",
+            value=allReactiveVars$normPeaks$diagPlotsInclude)
+        updateSelectInput(session,inputId="export",
+            selected=allReactiveVars$normPeaks$export)
+        updateNumericInput(session,inputId="tspan",
+            value=allReactiveVars$normPeaks$tspan)
+        updateNumericInput(session,inputId="it",
+            value=allReactiveVars$normPeaks$it)
+        updateNumericInput(session,inputId="corrfac",
+            value=allReactiveVars$normPeaks$corrfac)
+        updateNumericInput(session,inputId="cutq",
+            value=allReactiveVars$normPeaks$cutq)
+        updateSelectInput(session,inputId="diagPlots",
+            selected=allReactiveVars$normPeaks$diagPlots)
+        updateNumericInput(session,inputId="ispan",
+            value=allReactiveVars$normPeaks$ispan)
+        updateNumericInput(session,inputId="corrfacNS",
+            value=allReactiveVars$normPeaks$corrfacNS)
+            
+        # Go to the first page
+        pipelineControl$step <- "preprocess"
+    })    
     resetTimeBoundaries <- eventReactive(input$resetTimeBoundaries,{
     })
     
@@ -301,6 +340,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
         runPreprocess=runPreprocess,
         resetPreprocess=resetPreprocess,
         resetToBack=resetToBack,
+        resetNormalization=resetNormalization,
         resetTimeBoundaries=resetTimeBoundaries,
         proceedToNormalization=proceedToNormalization
     ))
@@ -314,6 +354,7 @@ analysisTabPanelReactive <- function(input,output,session,
     timeFilter <- allReactiveVars$timeFilter
     readSpec <- allReactiveVars$readSpec
     findPeaks <- allReactiveVars$findPeaks
+    normPeaks <- allReactiveVars$normPeaks
     
     # Validators
     
@@ -830,6 +871,7 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     runPreprocess <- analysisTabPanelReactiveEvents$runPreprocess
     resetPreprocess <- analysisTabPanelReactiveEvents$resetPreprocess
     resetToBack <- analysisTabPanelReactiveEvents$resetToBack
+    resetNormalization <- analysisTabPanelReactiveEvents$resetNormalization
 	resetTimeBoundaries <- analysisTabPanelReactiveEvents$resetTimeBoundaries
 	proceedToNormalization <- 
 		analysisTabPanelReactiveEvents$proceedToNormalization
@@ -1038,10 +1080,14 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
             all(pipelineInput$classes != "") &&
             length(pipelineInput$classes) == length(pipelineInput$filenames)
         if (pipelineControl$uiError || !pipelineControl$filesUploaded 
-            || !classesOK)
+            || !classesOK){
             shinyjs::disable("runPreprocessing")
-        else
+        	shinyjs::disable("runNormalization")
+        }
+        else{
             shinyjs::enable("runPreprocessing")
+        	shinyjs::enable("runNormalization")
+        }
     })
     
     # File upload
@@ -1069,7 +1115,10 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     observe({
         resetPreprocess()
     })
-    
+     observe({
+    	resetNormalization()
+    })
+   
     # Timefilter functions
     observe({
 		spectralReviewPlots()
