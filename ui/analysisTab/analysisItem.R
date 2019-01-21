@@ -512,8 +512,8 @@ analysisTabPanelNormalization <- function() {
                     style="display:inline-block",
                      disabled(actionButton(
                         inputId="runNormalization",
-                        label="Engage!",
-                        icon=icon("rocket"),
+                        label="Energize!",
+                        icon=icon("bolt"),
                         class="btn-primary"
                      ))
                    )

@@ -251,7 +251,50 @@ analysisTabPanelEventReactive <- function(input,output,session,
     
     proceedToNormalization <- eventReactive(input$proceedToNormalization,{
 		pipelineControl$isRunning <- FALSE
+		
+		# Store the time boundaries to
+		# pipelineInput$refinedTimeBoundaries
+		
 		pipelineControl$step <- "normalization"
+	})
+	
+	runNormalization <- eventReactive(input$proceedToNormalization,{
+		pipelineControl$isRunning <- FALSE
+		
+		pipelineInput$normLogFile <- 
+            file.path(pipelineInput$scriptPath,"norm.Rout")
+        normLog <- file(pipelineInput$xcmsLogFile,open="wt")
+        
+        sink(normLog)
+        sink(normLog,type="message")
+		
+		norm <- normalizeSamples(
+			peaks=isolate(pipelineResult$peaks),
+			method=as.character(input$method),
+			normalize="rlm",
+			correctfor=as.character(input$correctfor),
+			time.range=pipelineInput$refinedTimeBoundaries,
+			tol=as.numeric(input$mztol),
+			tspan=as.numeric(input$tspan),
+			ispan=as.numeric(input$ispan),
+			tit=as.numeric(input$ispan),
+			cutq=as.numeric(input$cutq),
+			corrfac=as.numeric(input$corrfrac),
+			cutrat=2,
+			export=file.path(pipelineInput$runPath,"norm_output.txt"),
+			diagplot=pipelineInput$diagPathNormallzation,
+			plottype="shiny",
+			export.type=as.character(input$export)
+		)
+		
+		sink(type="message")
+        sink()
+        
+        pipelineInput$normRda <- file.path(pipelineInput$runPath,"norm.RData")
+        save(norm,file=pipelineInput$normRda)
+		
+		
+		#pipelineControl$step <- "results"
 	})
     
     return(list(

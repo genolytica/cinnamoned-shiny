@@ -35,7 +35,8 @@ initReactiveVars <- function() {
         tmpPath="/media/HD3/ctmp",
         uploadedFiles=NULL,
         filenames=NULL,
-        classes=NULL
+        classes=NULL,
+        refinedTimeBoundaries=NULL
     )
     
     #reactiveVars$pipelineInput <- reactiveValues(
