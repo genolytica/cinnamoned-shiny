@@ -300,7 +300,6 @@ analysisTabPanelEventReactive <- function(input,output,session,
                     as.numeric(input[[paste("reviewMaxTime",i,sep="_")]])
                  ))
             })
-        print(isolate({pipelineInput$refinedTimeBoundaries}))
         pipelineControl$step <- "normalization"
     })
     
@@ -870,16 +869,10 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     runPreprocess <- analysisTabPanelReactiveEvents$runPreprocess
     resetPreprocess <- analysisTabPanelReactiveEvents$resetPreprocess
     resetToBack <- analysisTabPanelReactiveEvents$resetToBack
-<<<<<<< HEAD
-    resetTimeBoundaries <- analysisTabPanelReactiveEvents$resetTimeBoundaries
-    proceedToNormalization <- 
-        analysisTabPanelReactiveEvents$proceedToNormalization
-=======
     resetNormalization <- analysisTabPanelReactiveEvents$resetNormalization
 	resetTimeBoundaries <- analysisTabPanelReactiveEvents$resetTimeBoundaries
 	proceedToNormalization <- 
 		analysisTabPanelReactiveEvents$proceedToNormalization
->>>>>>> develop
     
     # Initialize observing reactive expressions
     analysisTabPanelReactiveExprs <- 
@@ -1135,6 +1128,8 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     # their own observer...
     observe({
         resetTimeBoundaries()
+    })
+    observe({
         proceedToNormalization()
     })
 

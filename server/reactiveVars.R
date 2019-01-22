@@ -5,9 +5,9 @@ initReactiveVars <- function() {
     
     reactiveVars$pipelineControl <- reactiveValues(
         #step="preprocess",
-        step="timefilter",
-        #step="normalization"
-        #step="result"
+        #step="timefilter",
+        step="normalization",
+        #step="result",
         filesUploaded=FALSE,
         sampleInfoFilled=FALSE,
         uiError=FALSE

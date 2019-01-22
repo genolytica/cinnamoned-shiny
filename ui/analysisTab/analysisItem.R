@@ -354,172 +354,182 @@ analysisTabPanelTimefilter <- function() {
 }
 
 analysisTabPanelNormalization <- function() {
-    fluidRow(column(10,
-        h4("Standards based normalization parameters"),
-        radioButtons(
-            inputId="normalizationParameters",
-            label="Use default normalization parameters",
-            inline=TRUE,
-            choices=list(
-              "Use defaults"="defaults",
-              "Customize"="custom"
-            )
-        ),
-        wellPanel(
-            h5("General"),
-            hr(),
-            class="well-panel",
-                fluidRow(column(4,
-                    selectInput(
-                        inputId="method", 
-                        label="Standards selection method:", 
-                        choices=list(
-                                "geometrical"="geom",
-                                "robust linear model"="rlm",
-                                "both"="both"
-                        ),
-                        selected="geom"
-                    )
-                ),column(4,
-                      selectInput(
-                          inputId="correctfor", 
-                          label="Correct for:", 
-                          choices=list(
-                              "time-intensity"="both",
-                              "time"="time",
-                              "intensity"="intensity",
-                              "none"="none"
-                          ),
-                          selected="both"
-                      )
-                ),column(4,
-                      textInput(
-                          inputId="mztol", 
-                          label = "m/z tolerance:", 
-                          value = 0.1 
-                     ),
-                     div(id="mzTolError",class="input-error",
-                        errorMessages$mzTol)
-                  )
-                ),
-              fluidRow(column(4,
-                  checkboxInput(
-                      inputId="diagPlotsInclude", 
-                      label = "Plot diagnostics", 
-                      value = TRUE
-                  )
-              )),
-              fluidRow(column(4,
-                  selectInput(
-                      inputId="export", 
-                      label = "Export results:", 
-                      choices = list(
-                          "Do not export"="none",
-                          "All data"="all",
-                          "Gene ARMADA"="armada"
-                      ),
-                      selected="all"
-                  )
-              ))
-          ),
-          wellPanel(
-              h5("Retention time alignment"),
-              hr(),
-              class="well-panel",
-                  fluidRow(column(6,
-                      textInput(
-                          inputId="tspan", 
-                          label="LOESS span:", 
-                          value="0"
-                      ),
-                      div(id="tSpanError",class="input-error",
-                          errorMessages$tSpan)
-                  ),column(6,
-                        textInput(
-                            inputId="it", 
-                            label="Alignment algorithm iterrations:", 
-                            value="3"
-                        ),
-                        div(id="itError",class="input-error",
-                            errorMessages$It)
-                  )),
-                  fluidRow(column(6,
-                      textInput(
-                          inputId="corrfac", 
-                          label="LOESS singularity correction factor:", 
-                          value="2"
-                      ),
-                      div(id="corrFacError",class="input-error",
-                          errorMessages$corrFac)
-                  ),column(6,
-                      textInput(
-                          inputId="cutq", 
-                          label="RT deviation exclusion quantile:", 
-                          value="0.98"
-                      ),
-                      div(id="cutQError",class="input-error",
-                          errorMessages$cutQ)
-                  ))
-          ),
-          wellPanel(
-              h5("Intensity normalization"),
-              hr(),
-              class="well-panel",
-                  fluidRow(column(6,
-                      selectInput(
-                      inputId="diagPlots", 
-                      label = "Export results:", 
-                      choices = list(
-                          "LOESS"="loess",
-                          "robust linear model (RLM)"="rlm",
-                          "linear model (LM)"="lm",
-                          "ISfactor"="simple"
-                        ),
-                        selected="rlm"
-                        )
-                  ),column(6,
-                      textInput(
-                      inputId="ispan", 
-                      label="LOESS span:", 
-                      value="0"
-                      ),
-                      div(id="iSpanError",class="input-error",
-                          errorMessages$iSpan)
-                  )),
-                  fluidRow(column(6,
-                      textInput(
-                          inputId="corrfacNS", 
-                          label="Non-standards correction factor:", 
-                          value="2"
-                      ),
-                      div(id="corrFacNSError",class="input-error",
-                          errorMessages$corrFacNS)
-                  ))
-            ),
-            fluidRow(br()),
-            fluidRow(column(6,
-                div(
-                    class="pull-left",
-                    style="display:inline-block",
-                    actionButton(
-                        inputId="resetNormalization",
-                        label="Reset",
-                        icon=icon("undo")
-                      )
-                  )
-            ),column(2," "
-            ),column(6,
-                div(
-                    class="pull-right",
-                    style="display:inline-block",
-                    	actionButton(
-                        	inputId="runNormalization",
-                        	label="Energize!",
-                        	icon=icon("bolt"),
-                        	class="btn-primary"
-                     	)
-                   )
-          ))
+    fluidRow(column(6,
+		fluidRow(column(12,
+			wellPanel(
+                h4("Internal standards normalization parameters"),
+                hr(),
+				radioButtons(
+					inputId="normalizationParameters",
+					label="Use default normalization parameters",
+					inline=TRUE,
+					choices=list(
+					  "Use defaults"="defaults",
+					  "Customize"="custom"
+					)
+				),
+				tabsetPanel(
+					id="normalizationParameters",
+					tabPanel(
+						h5("General"),
+						hr(),
+						fluidRow(column(4,
+							selectInput(
+								inputId="method", 
+								label="Standards selection method:", 
+								choices=list(
+									"geometrical"="geom",
+									"robust linear model"="rlm",
+									"both"="both"
+								),
+								selected="geom"
+							)
+						),column(4,
+							selectInput(
+								inputId="correctfor", 
+								label="Correct for:", 
+								choices=list(
+									"time-intensity"="both",
+									"time"="time",
+									"intensity"="intensity",
+									"none"="none"
+								),
+								selected="both"
+							)
+						),column(4,
+							textInput(
+								inputId="mztol", 
+								label = "m/z tolerance:", 
+								value = 0.1 
+							),
+							div(
+								id="mzTolError",class="input-error",
+								errorMessages$mzTol
+							)
+						)),
+						fluidRow(column(4,
+							checkboxInput(
+								inputId="diagPlotsInclude", 
+								label = "Plot diagnostics", 
+								value = TRUE
+							)
+						)),
+						fluidRow(column(4,
+							selectInput(
+								inputId="export", 
+								label = "Export results:", 
+								choices = list(
+									"Do not export"="none",
+									"All data"="all",
+									"Gene ARMADA"="armada"
+								),
+								selected="all"
+							)
+						))
+					),
+					tabPanel(
+						h5("Retention time alignment"),
+						hr(),
+						class="well-panel",
+							fluidRow(column(6,
+								textInput(
+									inputId="tspan", 
+									label="LOESS span:", 
+									value="0"
+								),
+								div(
+									id="tSpanError",class="input-error",
+									errorMessages$tSpan
+								)
+						  ),column(6,
+								textInput(
+									inputId="it", 
+									label="Alignment algorithm iterrations:", 
+									value="3"
+								),
+								div(id="itError",class="input-error",
+									errorMessages$It)
+						  )),
+						  fluidRow(column(6,
+							  textInput(
+								  inputId="corrfac", 
+								  label="LOESS singularity correction factor:", 
+								  value="2"
+							  ),
+							  div(id="corrFacError",class="input-error",
+								  errorMessages$corrFac)
+						  ),column(6,
+							  textInput(
+								  inputId="cutq", 
+								  label="RT deviation exclusion quantile:", 
+								  value="0.98"
+							  ),
+							  div(id="cutQError",class="input-error",
+								  errorMessages$cutQ)
+						  ))
+				  ),
+				  tabPanel(
+					  h5("Intensity normalization"),
+					  hr(),
+					  class="well-panel",
+						  fluidRow(column(6,
+							  selectInput(
+							  inputId="diagPlots", 
+							  label = "Export results:", 
+							  choices = list(
+								  "LOESS"="loess",
+								  "robust linear model (RLM)"="rlm",
+								  "linear model (LM)"="lm",
+								  "ISfactor"="simple"
+								),
+								selected="rlm"
+								)
+						  ),column(6,
+							  textInput(
+							  inputId="ispan", 
+							  label="LOESS span:", 
+							  value="0"
+							  ),
+							  div(id="iSpanError",class="input-error",
+								  errorMessages$iSpan)
+						  )),
+						  fluidRow(column(6,
+							  textInput(
+								  inputId="corrfacNS", 
+								  label="Non-standards correction factor:", 
+								  value="2"
+							  ),
+							  div(id="corrFacNSError",class="input-error",
+								  errorMessages$corrFacNS)
+						  ))
+					)),
+					fluidRow(br()),
+					fluidRow(column(6,
+						div(
+							class="pull-left",
+							style="display:inline-block",
+							actionButton(
+								inputId="resetNormalization",
+								label="Reset",
+								icon=icon("undo")
+							  )
+						  )
+					),column(2," "
+					),column(6,
+						div(
+							class="pull-right",
+							style="display:inline-block",
+								actionButton(
+									inputId="runNormalization",
+									label="Energize!",
+									icon=icon("bolt"),
+									class="btn-primary"
+								)
+						   )
+				  )),
+				  class="well-panel"
+			)
+		))
     ))
   
 }
