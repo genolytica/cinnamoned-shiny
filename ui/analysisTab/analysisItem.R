@@ -358,7 +358,7 @@ analysisTabPanelNormalization <- function() {
         h4("Standards based normalization parameters"),
         radioButtons(
             inputId="normalizationParameters",
-            label="Use default normalization parameters",
+            label="",
             inline=TRUE,
             choices=list(
               "Use defaults"="defaults",
