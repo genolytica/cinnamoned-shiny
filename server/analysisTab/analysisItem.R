@@ -271,8 +271,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
         updateNumericInput(session,inputId="corrfacNS",
             value=allReactiveVars$normPeaks$corrfacNS)
             
-        # Go to the first page
-        pipelineControl$step <- "preprocess"
+        # Go to the normalization page
+        pipelineControl$step <- "normalization"
     })    
     resetTimeBoundaries <- eventReactive(input$resetTimeBoundaries,{
         lapply(1:length(pipelineInput$filenames),function(i) {
@@ -870,10 +870,10 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     resetPreprocess <- analysisTabPanelReactiveEvents$resetPreprocess
     resetToBack <- analysisTabPanelReactiveEvents$resetToBack
     resetNormalization <- analysisTabPanelReactiveEvents$resetNormalization
-	resetTimeBoundaries <- analysisTabPanelReactiveEvents$resetTimeBoundaries
-	proceedToNormalization <- 
-		analysisTabPanelReactiveEvents$proceedToNormalization
-    
+    resetTimeBoundaries <- analysisTabPanelReactiveEvents$resetTimeBoundaries
+    proceedToNormalization <- 
+        analysisTabPanelReactiveEvents$proceedToNormalization
+
     # Initialize observing reactive expressions
     analysisTabPanelReactiveExprs <- 
         analysisTabPanelReactive(input,output,session,allReactiveVars,
@@ -1080,11 +1080,11 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         if (pipelineControl$uiError || !pipelineControl$filesUploaded 
             || !classesOK){
             shinyjs::disable("runPreprocessing")
-        	shinyjs::disable("runNormalization")
+            shinyjs::disable("runNormalization")
         }
         else{
             shinyjs::enable("runPreprocessing")
-        	shinyjs::enable("runNormalization")
+            shinyjs::enable("runNormalization")
         }
     })
     
@@ -1114,7 +1114,19 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         resetPreprocess()
     })
      observe({
-    	resetNormalization()
+        resetNormalization()
+    })
+     
+    # Disable Normalization inputs when "use defaults" is selected
+    observe({
+        normInputs <- c("method","correctfor","mztol","diagPlotsInclude","export",
+                        "tspan","it","corrfac","cutq","diagPlots","ispan","corrfacNS")
+        
+        enabledIf <- function(inputID) {
+            shinyjs::toggleState(inputID, input$normalizationParameters != "defaults")
+        }
+        
+        lapply(normInputs, enabledIf)
     })
    
     # Timefilter functions
