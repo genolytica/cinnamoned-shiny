@@ -368,13 +368,10 @@ analysisTabPanelEventReactive <- function(input,output,session,
     
     getDiagTab <- eventReactive(input$analysisDiagnosticPlots,{
         if (pipelineControl$step == "result") {
-            for (i in 1:length(pipelineInput$filenames)) {
-                cond <- isolate({
-                    input$analysisDiagnosticPlots == paste("diagTab",i,sep="_")
-                })
-                if (cond)
-                    pipelineResults$currentIndex <- i
-            }
+            val <- isolate(input$analysisDiagnosticPlots)
+            if (!is.null(val))
+                pipelineResults$currentIndex <- 
+                    as.numeric(strsplit(val,"_")[[1]][2])
         }
     })
     
