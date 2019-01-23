@@ -111,6 +111,16 @@ input[type="color"]:focus,
     overflow: auto;
 }
 
+.btn-black {
+    background-color: #303030;
+    border-color: #303030;
+}
+
+.btn-black:hover {
+    background-color: #4F4F4F;
+    border-color: #4F4F4F;
+}
+
 .run-progress {
     font-family: "Courier New", Courier, monospace;
     font-size: 0.9em;

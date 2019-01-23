@@ -277,17 +277,23 @@ queryMETLIN.mass <- function(m,m.tol=0.01,m.int=NULL) {
 }
 
 getRefData <- function(type="geom",dbdata=NULL) {
-    if (!require(RMySQL))
-        stop("R package RMySQL is required!")
+    #if (!require(RMySQL))
+    #    stop("R package RMySQL is required!")
+    if (!require(RSQLite))
+        stop("R package RSQLite is required!")
     type <- tolower(type)
     if (type!="geom" && type!="rlm" && type!="both")
         stop("type must be one of \"geom\", \"rlm\" or \"both\"")
-    if (is.null(dbdata) || length(dbdata)!=2)
-        stop("dbdata must be a vector of length 2, in order to connect to ",
-            "the DB")
+    #if (is.null(dbdata) || length(dbdata)!=2)
+    #    stop("dbdata must be a vector of length 2, in order to connect to ",
+    #        "the DB")
+    if (is.null(dbdata) || !file.exists(dbdata))
+        stop("dbdata must be a valid sqlite file!")
 
-    con <- dbConnect(MySQL(),user=dbdata[1],password=dbdata[2],
-        dbname="RFLab_MetaboDB",host="localhost")
+    #con <- dbConnect(MySQL(),user=dbdata[1],password=dbdata[2],
+    #    dbname="RFLab_MetaboDB",host="localhost")
+    con <- dbConnect(SQLite(),dbname=dbdata)
+    
     query <- paste("SELECT id,mz,rt,is_",type,",summarized_intensity_",type,
         " FROM peak_info ORDER BY mz",sep="")
     dbd <- dbGetQuery(con,query)
@@ -296,17 +302,22 @@ getRefData <- function(type="geom",dbdata=NULL) {
 }
 
 getISData <- function(type="geom",dbdata=NULL) {
-    if (!require(RMySQL))
-        stop("R package RMySQL is required!")
+    #if (!require(RMySQL))
+    #    stop("R package RMySQL is required!")
+    if (!require(RSQLite))
+        stop("R package RSQLite is required!")
     type <- tolower(type)
     if (type!="geom" && type!="rlm" && type!="both")
         stop("type must be one of \"geom\", \"rlm\" or \"both\"")
-    if (is.null(dbdata) || length(dbdata)!=2)
-        stop("dbdata must be a vector of length 2, in order to connect to the ",
-            "DB")
+    #if (is.null(dbdata) || length(dbdata)!=2)
+    #    stop("dbdata must be a vector of length 2, in order to connect to the ",
+    #        "DB")
+    if (is.null(dbdata) || !file.exists(dbdata))
+        stop("dbdata must be a valid sqlite file!")
 
-    con <- dbConnect(MySQL(),user=dbdata[1],password=dbdata[2],
-        dbname="RFLab_MetaboDB",host="localhost")
+    #con <- dbConnect(MySQL(),user=dbdata[1],password=dbdata[2],
+    #    dbname="RFLab_MetaboDB",host="localhost")
+    con <- dbConnect(SQLite(),dbname=dbdata)
     query <- paste("SELECT id,mz,rt,summarized_intensity_",type,
         " FROM peak_info WHERE is_",type,"=1 ORDER BY mz",sep="")
     dbd <- dbGetQuery(con,query)

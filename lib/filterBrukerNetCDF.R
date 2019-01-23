@@ -541,28 +541,6 @@ clear <- function() {
     gc()
 }
 
-updateShinyProgressBar <- function(shinyProgressData,pbValue,headerMsg="",
-    footerMsg="") {
-    
-    if (is.null(shinyProgressData))
-        return()
-    
-    if (is.null(shinyProgressData$progressTotal))
-        shinyProgressData$progressTotal <- 100
-    
-    updateProgressBar(
-        session=shinyProgressData$session,
-        id=shinyProgressData$progressId,
-        value=pbValue,
-        total=shinyProgressData$progressTotal
-    )
-    
-    shinyProgressData$session$sendCustomMessage(
-        "changeProgressHeader",list(value=headerMsg))
-    shinyProgressData$session$sendCustomMessage(
-        "changeProgressFooter",list(value=footerMsg))
-}
-
 # Testing stuff
 #plot(mass[1:64800],inten[1:64800],type="l",pch=21,col="red",bg="red",lwd=2,
 #main="",xlab="",ylab="")

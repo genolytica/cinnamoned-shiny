@@ -23,6 +23,10 @@ baseColours <- c("#B40000","#00B400","#0000B4","#B45200","#9B59B6","#21BCBF",
 # Restrict the number of cores dedicated to cinnamoned2
 RC <- 0.25
 
+# Database paths
+METABO_DB <- "data/RFLab_MetaboDB.sqlite"
+APP_DB <- "data/cinnamonDB.sqlite"
+
 # Error messages
 errorMessages <- list(
     projectName=paste("The project name must be smaller than 100", 

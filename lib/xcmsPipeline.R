@@ -669,25 +669,3 @@ reorder.raw <- function(raw.files,ord.names) {
     ord.files <- raw.files[org.ind]
     return(ord.files)
 }
-
-updateShinyProgressBar <- function(shinyProgressData,pbValue,headerMsg="",
-    footerMsg="") {
-    
-    if (is.null(shinyProgressData))
-        return()
-    
-    if (is.null(shinyProgressData$progressTotal))
-        shinyProgressData$progressTotal <- 100
-    
-    updateProgressBar(
-        session=shinyProgressData$session,
-        id=shinyProgressData$progressId,
-        value=pbValue,
-        total=shinyProgressData$progressTotal
-    )
-    
-    shinyProgressData$session$sendCustomMessage(
-        "changeProgressHeader",list(value=headerMsg))
-    shinyProgressData$session$sendCustomMessage(
-        "changeProgressFooter",list(value=footerMsg))
-}

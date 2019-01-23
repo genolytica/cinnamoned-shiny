@@ -134,8 +134,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
                 session=session,
                 progressId="preprocessProgressBar",
                 progressTotal=16,
-                headerId="preprocessCurrentFile",
-                footerId="preprocessCurrentStep"
+                textId="pre"
             )
         )
         
@@ -234,12 +233,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # Go to the first page
         pipelineControl$step <- "preprocess"
     })
+    
     resetNormalization <- eventReactive(input$resetNormalization,{
-        # Get files and parameters from the control variables above
-        # With these run the xcmsPipeline.R function
-        
-        pipelineControl$isRunning <- FALSE
-        
         # Reset runtime variables
         allReactiveVars$resetTimefilter()
         allReactiveVars$resetPreprocess()
@@ -270,10 +265,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
             value=allReactiveVars$normPeaks$ispan)
         updateNumericInput(session,inputId="corrfacNS",
             value=allReactiveVars$normPeaks$corrfacNS)
-            
-        # Go to the normalization page
-        pipelineControl$step <- "normalization"
-    })    
+    })
+    
     resetTimeBoundaries <- eventReactive(input$resetTimeBoundaries,{
         lapply(1:length(pipelineInput$filenames),function(i) {
             updateNumericInput(
@@ -306,13 +299,24 @@ analysisTabPanelEventReactive <- function(input,output,session,
     runNormalization <- eventReactive(input$runNormalization,{
         pipelineInput$normLogFile <- 
             file.path(pipelineInput$scriptPath,"norm.Rout")
-        normLog <- file(pipelineInput$xcmsLogFile,open="wt")
+        normLog <- file(pipelineInput$normLogFile,open="wt")
+        
+        # Show progress stuff
+        shinyjs::show("progressWrapperN")
+        shinyjs::html("normalizationProgress","Normalization running!")
+        
+        # Disable controls while running
+        normInputs <- c("method","correctfor","mztol","diagPlotsInclude",
+           "export","tspan","it","corrfac","cutq","diagPlots","ispan",
+           "corrfacNS")
+        sapply(normInputs,shinyjs::disable)
         
         sink(normLog)
         sink(normLog,type="message")
         
         norm <- normalizeSamples(
-            peaks=isolate(pipelineResult$peaks),
+            peaks=isolate(pipelineResults$peaks),
+            dbdata=METABO_DB,
             method=as.character(input$method),
             normalize="rlm",
             correctfor=as.character(input$correctfor),
@@ -320,24 +324,58 @@ analysisTabPanelEventReactive <- function(input,output,session,
             tol=as.numeric(input$mztol),
             tspan=as.numeric(input$tspan),
             ispan=as.numeric(input$ispan),
-            tit=as.numeric(input$ispan),
+            tit=as.numeric(input$tit),
             cutq=as.numeric(input$cutq),
-            corrfac=as.numeric(input$corrfrac),
-            cutrat=2,
+            corrfac=as.numeric(input$corrfac),
+            cutrat=as.numeric(input$corrfacNS),
             export=file.path(pipelineInput$runPath,"norm_output.txt"),
-            diagplot=pipelineInput$diagPathNormallzation,
-            plottype="shiny",
-            export.type=as.character(input$export)
+            diagplot=pipelineInput$diagPathNormalization,
+            plottype="png",
+            export.type=as.character(input$export),
+            shinyProgressData=list(
+                session=session,
+                progressId="normalizationProgressBar",
+                progressTotal=3,
+                textId="norm"
+            )
         )
         
         sink(type="message")
         sink()
         
+        pipelineResults$norm <- norm
         pipelineInput$normRda <- file.path(pipelineInput$runPath,"norm.RData")
         save(norm,file=pipelineInput$normRda)
+       
+        # Re-enable controls
+        sapply(normInputs,shinyjs::enable)
         
+        pipelineResults$currentIndex <- 1
+        pipelineControl$step <- "result"
+    })
+    
+    discardAnalysis <- eventReactive(input$discardAnalysis,{
+        # TODO: Reset EVERYTHING (see functions above) and also files
         
-        #pipelineControl$step <- "results"
+        # Go to first page
+        pipelineControl$step <- "preprocess"
+    })
+    
+    saveAnalysis <- eventReactive(input$saveAnalysis,{
+        # TODO: Write parameters to SQLite and display a message (essentially
+        # update the button with "Saved" and disable). Discard becomes "New"
+    })
+    
+    getDiagTab <- eventReactive(input$analysisDiagnosticPlots,{
+        if (pipelineControl$step == "result") {
+            for (i in 1:length(pipelineInput$filenames)) {
+                cond <- isolate({
+                    input$analysisDiagnosticPlots == paste("diagTab",i,sep="_")
+                })
+                if (cond)
+                    pipelineResults$currentIndex <- i
+            }
+        }
     })
     
     return(list(
@@ -346,7 +384,11 @@ analysisTabPanelEventReactive <- function(input,output,session,
         resetToBack=resetToBack,
         resetNormalization=resetNormalization,
         resetTimeBoundaries=resetTimeBoundaries,
-        proceedToNormalization=proceedToNormalization
+        proceedToNormalization=proceedToNormalization,
+        runNormalization=runNormalization,
+        discardAnalysis=discardAnalysis,
+        saveAnalysis=saveAnalysis,
+        getDiagTab=getDiagTab
     ))
 }
 
@@ -576,7 +618,7 @@ analysisTabPanelReactive <- function(input,output,session,
     })
 
     validateIt <- reactive({
-        it <- as.numeric(input$it)
+        it <- as.numeric(input$tit)
         if (it < 0 || is.na(it)) {
             pipelineControl$uiError <- TRUE
         return(TRUE)
@@ -660,19 +702,19 @@ analysisTabPanelReactive <- function(input,output,session,
             if (is.list(peaks)) {
                 for (i in 1:length(peaks)) {
                     output[[paste("rawSpectre",i,sep="_")]] <- renderPlot({
-                        plotMzrt(peaks[[i]]$rt,peaks[[i]]$mz,
+                        plot.mzrt(peaks[[i]]$rt,peaks[[i]]$mz,
                         inten=peaks[[i]]$into,output="shiny")
                     })
                 }
             }
             else
                 output[["rawSpectre_1"]] <- renderPlot({
-                    plotMzrt(peaks$rt,peaks$mz,output="shiny")
+                    plot.mzrt(peaks$rt,peaks$mz,output="shiny")
                 })
         }
     })
     
-    # Time filer boxplots
+    # Time filter controls
     doTimeFilterReview <- reactive({
         if (!is.null(pipelineInput$filenames) 
             && pipelineControl$step=="timefilter"
@@ -689,6 +731,121 @@ analysisTabPanelReactive <- function(input,output,session,
                     shinyjs::disable(paste("reviewMaxTime",i,sep="_"))
                 }
             })
+        }
+    })
+    
+    # Final diagnostic plots - alignment
+    finalAlignmentPlots <- reactive({
+        norm <- pipelineResults$norm
+        if (!is.null(norm)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("finalAlignment",i,sep="_")]] <- renderPlot({
+                    plot.match(
+                        pd[[i]]$rtref,
+                        pd[[i]]$ref$mz[pd[[i]]$match.ref[[i]]$ref.idx],
+                        pd[[i]]$rtcor,
+                        pd[[i]]$peaks[[i]]$mz[pd[[i]]$match.ref[[i]]$new.idx],
+                        pd[[i]]$rtnew,
+                        pd[[i]]$peaks[[i]]$mz[pd[[i]]$match.ref[[i]]$new.idx],
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - deviation
+    finalDeviationPlots <- reactive({
+        norm <- pipelineResults$norm
+        if (!is.null(norm)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("finalDeviation",i,sep="_")]] <- renderPlot({
+                    plot.rtdev(
+                        x=pd[[i]]$x,
+                        y=pd[[i]]$y,
+                        l=pd[[i]]$iset,
+                        exclude=pd[[i]]$badrt.ref,
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - boxplot
+    finalBoxplots <- reactive({
+        norm <- pipelineResults$norm
+        if (!is.null(norm)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("finalBoxplot",i,sep="_")]] <- renderPlot({
+                    boxplot.mat(
+                        cbind(pd[[i]]$intref,pd[[i]]$intnew,pd[[i]]$intcor),
+                        name=c("Reference","Raw","Normalized"),
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - raw intensities
+    finalRawint <- reactive({
+        norm <- pipelineResults$norm
+        if (!is.null(norm)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("finalRawint",i,sep="_")]] <- renderPlot({
+                    plot.rvn(
+                        pd[[i]]$a[,1],
+                        pd[[i]]$b[,1],
+                        pd[[i]]$aa,
+                        pd[[i]]$bb,
+                        lim=pd[[i]]$cutrat,
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - normalized intensities
+    finalNormint <- reactive({
+        norm <- pipelineResults$norm
+        if (!is.null(norm)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("finalNormint",i,sep="_")]] <- renderPlot({
+                    plot.rvn(
+                        pd[[i]]$a[,2],
+                        pd[[i]]$b[,2],
+                        pd[[i]]$aa,
+                        pd[[i]]$bb,
+                        lim=pd[[i]]$cutrat,
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - raw intensities
+    finalStdint <- reactive({
+        norm <- pipelineResults$norm
+        if (!is.null(norm)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("finalStdint",i,sep="_")]] <- renderPlot({
+                    plot.rvn(
+                        pd[[i]]$aa,
+                        pd[[i]]$bb,
+                        lim=pd[[i]]$cutrat,
+                        output="shiny"
+                    )
+                })
+            }
         }
     })
     
@@ -752,7 +909,13 @@ analysisTabPanelReactive <- function(input,output,session,
         validateCorrFac=validateCorrFac,
         validateCutQ=validateCutQ,
         validateiSpan=validateiSpan,
-        validateCorrFacNS=validateCorrFacNS
+        validateCorrFacNS=validateCorrFacNS,
+        finalAlignmentPlots=finalAlignmentPlots,
+        finalDeviationPlots=finalDeviationPlots,
+        finalBoxplots=finalBoxplots,
+        finalRawint=finalRawint,
+        finalNormint=finalNormint,
+        finalStdint=finalStdint
     ))
 }
 
@@ -760,6 +923,7 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
+    pipelineResults <- allReactiveVars$pipelineResults
     timeFilter <- allReactiveVars$timeFilter
     
     # Filenames and classes
@@ -854,12 +1018,185 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
             },pipelineInput$filenames)
         }
     })
+    
+    # Results page
+    output$resultsPage <- renderUI({
+        if (pipelineControl$step=="result" && !is.null(pipelineResults$norm)) {
+            fluidRow(column(12,
+            
+            fluidRow(column(8,
+                wellPanel(
+                    fluidRow(column(12,
+                        h4("Summary"),
+                        hr(),
+                        div(
+                            style="font-size=1.3em",
+                            "Your analysis with project ID",
+                            tags$span(
+                                style="font-weight:600; color:#D70000",
+                                pipelineInput$currentRunId
+                            ),
+                            "has been successfully completed! The results can ",
+                            "be reviewed in the tabs below. You can also",
+                            "choose one of the following actions."
+                        )
+                    )),
+                    fluidRow(br()),
+                    fluidRow(column(8,
+                        div(
+                            class="pull-left",
+                            downloadButton(
+                                outputId="exportResults",
+                                label="Download results",
+                                class="btn-black"
+                            )
+                        )
+                    ),column(2,
+                        div(
+                            class="pull-left",
+                            actionButton(
+                                inputId="discardAnalysis",
+                                label="Discard analysis",
+                                icon=icon("ban")
+                            )
+                        )
+                    ),column(2,
+                        div(
+                            class="pull-right",
+                            actionButton(
+                                inputId="saveAnalysis",
+                                label="Save analysis",
+                                class="btn-primary",
+                                icon=icon("floppy-o")
+                            )
+                        )
+                    )),
+                    class="well-panel"
+                )
+            ),column(4,
+                wellPanel(
+                    fluidRow(column(12,
+                        h4("Reference dataset match stats"),
+                        hr(),
+                        div(
+                            style="font-size:1.1em; font-weight:600",
+                            pipelineInput$filenames[
+                                pipelineResults$currentIndex]," - ",
+                            pipelineInput$classes[pipelineResults$currentIndex]
+                        ),
+                        div(
+                            tags$strong(pipelineResults$norm$pct[
+                                pipelineResults$currentIndex,"total"]),
+                            "% of new m/z matching with reference"
+                        ),
+                        div(
+                            tags$strong(pipelineResults$norm$pct[
+                                pipelineResults$currentIndex,"is"]),
+                            "% of new sample IS matching with reference"
+                        ),
+                        div(
+                            tags$strong(pipelineResults$norm$pct[
+                                pipelineResults$currentIndex,"is_rt"]),
+                            "% of new sample IS used for RT correction"
+                        ),
+                        div(
+                            tags$strong(pipelineResults$norm$pct[
+                                pipelineResults$currentIndex,"is_inten"]),
+                            "% of new sample IS use for intensity normalization"
+                        )
+                    )),
+                    class="well-panel"
+                )
+            )),
+            fluidRow(column(12,
+                wellPanel(
+                    h4("Diagnostics"),
+                    hr(),
+                    do.call(tabsetPanel,c(
+                        id="analysisDiagnosticPlots",
+                        lapply(1:length(pipelineInput$filenames),function(i,n) {
+                            tabPanel(
+                                h5(n[i]),
+                                fluidRow(br()),
+                                wellPanel(
+                                    fluidRow(column(12,
+                                        div(
+                                            style=paste(
+                                                "font-size: 1.1em;",
+                                                "margin-bottom:10px"
+                                            ),
+                                            "Spectral alignment for ",
+                                            tags$span(style="font-weight:600",
+                                                n[i])
+                                        ),
+                                        plotOutput(paste("finalAlignment",i,
+                                            sep="_"),height="1200px")
+                                    )),
+                                    class="well-panel"
+                                ),
+                                wellPanel(
+                                    fluidRow(column(12,
+                                        div(
+                                            style=paste(
+                                                "font-size: 1.1em;",
+                                                "margin-bottom:10px"
+                                            ),
+                                            "Retention time and intensity ",
+                                            "normalization for ",
+                                            tags$span(style="font-weight:600",
+                                                n[i])
+                                        )
+                                    )),
+                                    fluidRow(column(8,
+                                        plotOutput(paste("finalDeviation",i,
+                                            sep="_"),height="600px")
+                                    ),column(4,
+                                        plotOutput(paste("finalBoxplot",i,
+                                            sep="_"),height="600px")
+                                    )),
+                                    class="well-panel"
+                                ),
+                                wellPanel(
+                                    fluidRow(column(12,
+                                        div(
+                                            style=paste(
+                                                "font-size: 1.1em;",
+                                                "margin-bottom:10px"
+                                            ),
+                                            "Scatter and Mean-Difference ",
+                                            "plots for ",
+                                            tags$span(style="font-weight:600",
+                                                n[i])
+                                        ),
+                                        plotOutput(paste("finalRawint",i,
+                                            sep="_"),height="400px"),
+                                        fluidRow(br()),
+                                        plotOutput(paste("finalNormint",i,
+                                            sep="_"),height="400px"),
+                                        fluidRow(br()),
+                                        plotOutput(paste("finalStdint",i,
+                                            sep="_"),height="400px")
+                                    )),
+                                    class="well-panel"
+                                ),
+                                value=paste("diagTab",i,sep="_")
+                            )
+                        },pipelineInput$filenames)
+                    )),
+                    class="well-panel"
+                )
+            ))
+            
+            ))
+        }
+    })
 }
 
 analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     allReactiveMsgs) {
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
+    pipelineResults <- allReactiveVars$pipelineResults
     
     # Initialize observing reactive events
     analysisTabPanelReactiveEvents <- 
@@ -873,6 +1210,10 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     resetTimeBoundaries <- analysisTabPanelReactiveEvents$resetTimeBoundaries
     proceedToNormalization <- 
         analysisTabPanelReactiveEvents$proceedToNormalization
+    runNormalization <- analysisTabPanelReactiveEvents$runNormalization
+    discardAnalysis <- analysisTabPanelReactiveEvents$discardAnalysis
+    saveAnalysis <- analysisTabPanelReactiveEvents$saveAnalysis
+    getDiagTab <- analysisTabPanelReactiveEvents$getDiagTab
 
     # Initialize observing reactive expressions
     analysisTabPanelReactiveExprs <- 
@@ -932,6 +1273,12 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     classNames <- analysisTabPanelReactiveExprs$classNames
     spectralReviewPlots <- analysisTabPanelReactiveExprs$spectralReviewPlots
     doTimeFilterReview <- analysisTabPanelReactiveExprs$doTimeFilterReview
+    finalAlignmentPlots <- analysisTabPanelReactiveExprs$finalAlignmentPlots
+    finalDeviationPlots <- analysisTabPanelReactiveExprs$finalDeviationPlots
+    finalBoxplots <- analysisTabPanelReactiveExprs$finalBoxplots
+    finalRawint <- analysisTabPanelReactiveExprs$finalRawint
+    finalNormint <- analysisTabPanelReactiveExprs$finalNormint
+    finalStdint <- analysisTabPanelReactiveExprs$finalStdint
     
     # Initialize UI element reactivity  
     analysisTabPanelRenderUI(output,session,allReactiveVars,allReactiveMsgs)
@@ -1072,19 +1419,18 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
 
     })
     
-    # If a validator fails or requirements not met, disable the run button
+    # If a preprocessing validator fails or requirements not met, disable the 
+    # run preprocessing button
     observe({
         classesOK <- !is.null(pipelineInput$classes) &&
             all(pipelineInput$classes != "") &&
             length(pipelineInput$classes) == length(pipelineInput$filenames)
         if (pipelineControl$uiError || !pipelineControl$filesUploaded 
-            || !classesOK){
+            || !classesOK ) {
             shinyjs::disable("runPreprocessing")
-            shinyjs::disable("runNormalization")
         }
         else{
             shinyjs::enable("runPreprocessing")
-            shinyjs::enable("runNormalization")
         }
     })
     
@@ -1094,10 +1440,8 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         classNames()
     })
     
-    # Act when the run button is pressed
+    # Act when the runPreprocessing button is pressed
     observe({
-        #session$sendCustomMessage("changeProgressHeader",
-        #    list(value="Running!"))
         tryCatch({
             shinyjs::disable("runPreprocessing")
             runPreprocess()
@@ -1109,7 +1453,7 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         })
     })
     
-    # Act when the reset button is pressed
+    # Act when the reset button in the first page is pressed
     observe({
         resetPreprocess()
     })
@@ -1117,17 +1461,19 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         resetNormalization()
     })
      
-    # Disable Normalization inputs when "use defaults" is selected
-    observe({
-        normInputs <- c("method","correctfor","mztol","diagPlotsInclude","export",
-                        "tspan","it","corrfac","cutq","diagPlots","ispan","corrfacNS")
-        
-        enabledIf <- function(inputID) {
-            shinyjs::toggleState(inputID, input$normalizationParameters != "defaults")
-        }
-        
-        lapply(normInputs, enabledIf)
-    })
+    ## ! Changed this to conditionalPanel to be more Shiny native
+    ## Disable Normalization inputs when "use defaults" is selected
+    #observe({
+    #    normInputs <- c("method","correctfor","mztol","diagPlotsInclude",
+    #       "export","tspan","it","corrfac","cutq","diagPlots","ispan",
+    #       "corrfacNS")
+    #    
+    #    enabledIf <- function(inputID) {
+    #        shinyjs::toggleState(inputID, input$normalizationParameters != "defaults")
+    #    }
+    #    
+    #    lapply(normInputs, enabledIf)
+    #})
    
     # Timefilter functions
     observe({
@@ -1144,5 +1490,49 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     observe({
         proceedToNormalization()
     })
-
+    
+    # If a normalization validator fails or requirements not met, disable the 
+    # run normalization button
+    observe({
+        if (pipelineControl$uiError || is.null(pipelineResults$peaks)) {
+            shinyjs::disable("runNormalization")
+        }
+        else {
+            shinyjs::enable("runNormalization")
+        }
+    })
+    
+    # Act when the run normalization button is pressed
+    observe({
+        tryCatch({
+            shinyjs::disable("runNormalization")
+            runNormalization()
+        },error=function(e) {
+            print(e)
+        },
+        finally={
+            shinyjs::enable("runNormalization")
+        })
+    })
+    
+    # Observe reporting page buttons
+    observe({
+        saveAnalysis()
+    })
+    observe({
+        discardAnalysis()
+    })
+    observe({
+        getDiagTab()
+    })
+    
+    # Observe reporting page
+    observe({
+        finalAlignmentPlots()
+        finalDeviationPlots()
+        finalBoxplots()
+        finalRawint()
+        finalNormint()
+        finalStdint()
+    })
 }

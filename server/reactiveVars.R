@@ -6,68 +6,72 @@ initReactiveVars <- function() {
     reactiveVars$pipelineControl <- reactiveValues(
         #step="preprocess",
         #step="timefilter",
-        step="normalization",
-        #step="result",
+        #step="normalization",
+        step="result",
         filesUploaded=FALSE,
         sampleInfoFilled=FALSE,
         uiError=FALSE
     )
     
+#~     reactiveVars$pipelineInput <- reactiveValues(
+#~         currentRunId=NULL,
+#~         basePath="/media/HD3/cprocess_tmp",
+#~         runPath=NULL,
+#~         dataPath=NULL,
+#~         dataPathRaw=NULL,
+#~         dataPathTrunc=NULL,
+#~         diagPath=NULL,
+#~         diagPathPreprocess=NULL,
+#~         diagPathNormalization=NULL,
+#~         scriptPath=NULL,
+#~         sampleInfoFile=NULL,
+#~         xcmsParamFile=NULL,
+#~         xcmsLogFile=NULL,
+#~         tmpXcmsLogFile=NULL,
+#~         normLogFile=NULL,
+#~         peaksRda=NULL,
+#~         normRda=NULL,
+#~         tmpPath="/media/HD3/ctmp",
+#~         uploadedFiles=NULL,
+#~         filenames=NULL,
+#~         classes=NULL,
+#~         refinedTimeBoundaries=NULL
+#~     )
+    
     reactiveVars$pipelineInput <- reactiveValues(
-        currentRunId=NULL,
+        currentRunId="21012019193711",
         basePath="/media/HD3/cprocess_tmp",
-        runPath=NULL,
-        dataPath=NULL,
-        dataPathRaw=NULL,
-        dataPathTrunc=NULL,
-        diagPath=NULL,
-        diagPathPreprocess=NULL,
-        diagPathNormallzation=NULL,
-        scriptPath=NULL,
-        sampleInfoFile=NULL,
-        xcmsParamFile=NULL,
-        xcmsLogFile=NULL,
+        runPath="/media/HD3/cprocess_tmp/21012019193711",
+        dataPath="/media/HD3/cprocess_tmp/21012019193711/data",
+        dataPathRaw="/media/HD3/cprocess_tmp/21012019193711/data/raw",
+        dataPathTrunc="/media/HD3/cprocess_tmp/21012019193711/data/trunc",
+        diagPath="/media/HD3/cprocess_tmp/21012019193711/diagnostic",
+        diagPathPreprocess="/media/HD3/cprocess_tmp/21012019193711/diagnostic/preprocess",
+        diagPathNormalization="/media/HD3/cprocess_tmp/21012019193711/diagnostic/normalization",
+        scriptPath="/media/HD3/cprocess_tmp/21012019193711/scripts",
+        sampleInfoFile="/media/HD3/cprocess_tmp/21012019193711/sample_info.txt",
+        xcmsParamFile="/media/HD3/cprocess_tmp/21012019193711/scripts/xcms.yml",
+        xcmsLogFile="/media/HD3/cprocess_tmp/21012019193711/scripts/xcms.Rout",
         tmpXcmsLogFile=NULL,
-        normLogFile=NULL,
-        peaksRda=NULL,
+        normLogFile="/media/HD3/cprocess_tmp/21012019193711/scripts/norm.Rout",
+        peaksRda="/media/HD3/cprocess_tmp/21012019193711/peaks.RData",
         normRda=NULL,
         tmpPath="/media/HD3/ctmp",
         uploadedFiles=NULL,
-        filenames=NULL,
-        classes=NULL,
-        refinedTimeBoundaries=NULL
+        filenames=c("2011-03-24_C3-3-3_NaCl_Run000010.cdf","2011-03-24_C3-3-3_NaCl_Run000011.cdf"),
+        classes=c("Ctrl","Ctrl"),
+        refinedTimeBoundaries=list(c(960,2700),c(960,2700))
     )
     
-    #reactiveVars$pipelineInput <- reactiveValues(
-    #    currentRunId="21012019193711",
-    #    basePath="/media/HD3/cprocess_tmp",
-    #    runPath="/media/HD3/cprocess_tmp/21012019193711",
-    #    dataPath="/media/HD3/cprocess_tmp/21012019193711/data",
-    #    dataPathRaw="/media/HD3/cprocess_tmp/21012019193711/data/raw",
-    #    dataPathTrunc="/media/HD3/cprocess_tmp/21012019193711/data/trunc",
-    #    diagPath="/media/HD3/cprocess_tmp/21012019193711/diagnostic",
-    #    diagPathPreprocess="/media/HD3/cprocess_tmp/21012019193711/diagnostic/preprocess",
-    #    diagPathNormallzation="/media/HD3/cprocess_tmp/21012019193711/diagnostic/normalization",
-    #    scriptPath="/media/HD3/cprocess_tmp/21012019193711/scripts",
-    #    sampleInfoFile="/media/HD3/cprocess_tmp/21012019193711/sample_info.txt",
-    #    xcmsParamFile="/media/HD3/cprocess_tmp/21012019193711/scripts/xcms.yml",
-    #    xcmsLogFile="/media/HD3/cprocess_tmp/21012019193711/scripts/xcms.Rout",
-    #    tmpXcmsLogFile=NULL,
-    #    normLogFile="/media/HD3/cprocess_tmp/21012019193711/scripts/norm.Rout",
-    #    peaksRda="/media/HD3/cprocess_tmp/21012019193711/peaks.RData",
-    #    normRda=NULL,
-    #    tmpPath="/media/HD3/ctmp",
-    #    uploadedFiles=NULL,
-    #    filenames=c("2011-03-24_C3-3-3_NaCl_Run000010.cdf","2011-03-24_C3-3-3_NaCl_Run000011.cdf"),
-    #    classes=c("Ctrl","Ctrl"),
-    #    refinedTimeBoundaries=NULL
-    #)
-    
-    #load("/media/HD3/cprocess_tmp/21012019193711/peaks.RData")
+    load("/media/HD3/cprocess_tmp/21012019193711/peaks.RData")
+    load("/media/HD3/cprocess_tmp/21012019193711/norm.RData")
     
     reactiveVars$pipelineResults <- reactiveValues(
-        #peaks=peaks
-        peaks=NULL
+        peaks=peaks,
+        norm=norm,
+        currentIndex=1
+        #peaks=NULL,
+        #norm=NULL
     )
     
     reactiveVars$timeFilter <- reactiveValues(
@@ -245,19 +249,19 @@ initReactiveVars <- function() {
     }
 
     reactiveVars$resetNormalization <- function() {
-    	reactiveVars$normPeaks$method           <- 'geom'
-    	reactiveVars$normPeaks$correctfor       <- 'both'
-    	reactiveVars$normPeaks$mztol            <- 0.1
-    	reactiveVars$normPeaks$diagPlotsInclude <- TRUE
-    	reactiveVars$normPeaks$export           <- 'all'
-    	reactiveVars$normPeaks$tspan            <- 0
-    	reactiveVars$normPeaks$it               <- 3
-    	reactiveVars$normPeaks$corrfac          <- 2
-    	reactiveVars$normPeaks$cutq             <- 0.98
-    	reactiveVars$normPeaks$diagPlots        <- 'rlm'
-    	reactiveVars$normPeaks$ispan            <- 0
-    	reactiveVars$normPeaks$corrfacNS        <- 2
-    	reactiveVars$normPeaks$method           <- 'geom'
+        reactiveVars$normPeaks$method           <- 'geom'
+        reactiveVars$normPeaks$correctfor       <- 'both'
+        reactiveVars$normPeaks$mztol            <- 0.1
+        reactiveVars$normPeaks$diagPlotsInclude <- TRUE
+        reactiveVars$normPeaks$export           <- 'all'
+        reactiveVars$normPeaks$tspan            <- 0
+        reactiveVars$normPeaks$it               <- 3
+        reactiveVars$normPeaks$corrfac          <- 2
+        reactiveVars$normPeaks$cutq             <- 0.98
+        reactiveVars$normPeaks$diagPlots        <- 'rlm'
+        reactiveVars$normPeaks$ispan            <- 0
+        reactiveVars$normPeaks$corrfacNS        <- 2
+        reactiveVars$normPeaks$method           <- 'geom'
     }
     
     reactiveVars$resetResults <- function() {

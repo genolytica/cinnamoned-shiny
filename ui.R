@@ -18,11 +18,11 @@ shinyUI(fluidPage(
         tags$script(
             'Shiny.addCustomMessageHandler("changeProgressHeader",',
             'function(msg) {',
-            '    $("#progressBarHeader").html(msg.value);',
+            '    $("#progressBarHeader_" + msg.tid).html(msg.value);',
             '});',
             'Shiny.addCustomMessageHandler("changeProgressFooter",',
             'function(msg) {',
-            '    $("#progressBarFooter").html(msg.value);',
+            '    $("#progressBarFooter_" + msg.tid).html(msg.value);',
             '});'
         )
     ),

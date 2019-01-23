@@ -125,23 +125,35 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
         vector("list",length(peaks))
 
     message("Normalizing peaks using standards from reference database...")
-    ########################################################################
+    ############################################################################
     updateShinyProgressBar(
         shinyProgressData=shinyProgressData,
-        pbValue=15,
+        pbValue=1,
         headerMsg=paste("Normalizing peaks using standards from reference ",
             "database...",sep=""),
         footerMsg="Matching new m/z with reference..."
     )
-    ########################################################################
+    ############################################################################
     
     # Match!
     for (i in 1:length(peaks))
         match.ref[[i]] <- match.mz(peaks[[i]]$mz,ref$mz,tol=tol)
+        
+    # Save a list with plot data for the Shiny app
+    plot.data.list <- vector("list",length(peaks))
     
     # Normalize times and counts (the indexing makes my head spin...)
-    for (i in 1:length(peaks)) {    
-        cat("\n=== Normalizing sample",i,"===\n")
+    for (i in 1:length(peaks)) {
+        message("\n=== Normalizing sample ",i,"===\n")
+        ########################################################################
+        updateShinyProgressBar(
+            shinyProgressData=shinyProgressData,
+            pbValue=2,
+            headerMsg=paste("Normalizing peaks using standards from reference ",
+                "database...",sep=""),
+            footerMsg=paste("Normalizing sample",i)
+        )
+        ########################################################################
         matched[[i]]$mz <- matched[[i]]$rt <- matched[[i]]$rawinten <- 
             matched[[i]]$norminten <- numeric(nrow(ref))
         
@@ -192,8 +204,7 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
         # Intensities
         peaks[[i]]$into[-match.ref[[i]]$new.idx] <- NA
         match.ref[[i]]$pct.iset.inten <- 0
-        if (correctfor=="both" || correctfor=="intensity")
-        {
+        if (correctfor=="both" || correctfor=="intensity") {
             intnew <- peaks[[i]]$into[match.ref[[i]]$new.idx]
             intnew <- log2(remove.zeros(intnew,strategy="offset"))
             intref <- log2(ref[match.ref[[i]]$ref.idx,
@@ -256,9 +267,41 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
                 name=c("Reference","Raw","Normalized"),output=plottype,
                 fil=file.path(diagplot,paste(diagnames[i],"_BOXPLOT.",
                 plottype,sep="")))
+            
+            # Keep plot data for "shiny" app and reproducibility
+            plot.data.list[[i]] <- list(
+                ref=ref,
+                match.ref=match.ref,
+                peaks=peaks,
+                rtref=rtref,
+                rtcor=rtcor,
+                rtnew=rtnew,
+                intref=intref,
+                intnew=intnew,
+                intcor=intcor,
+                x=x,
+                y=y,
+                a=a,
+                b=b,
+                aa=aa,
+                bb=bb,
+                iset=iset,
+                badrt.ref=badrt.ref,
+                cutrat=cutrat
+            )
         }
     }
-
+    
+    ############################################################################
+    updateShinyProgressBar(
+        shinyProgressData=shinyProgressData,
+        pbValue=3,
+        headerMsg=paste("Normalizing peaks using standards from reference ",
+            "database...",sep=""),
+        footerMsg="Exporting and finalizing..."
+    )
+    ############################################################################
+    
     # Now construct the final table...
     # x = [reference_ID, reference_mz, reference_rt, []
     norm <- list()
@@ -338,31 +381,9 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
         #row.names=FALSE)
     }
         
-    return(list(norm=norm,iset=iset.match,pct=pcts))
+    return(list(norm=norm,iset=iset.match,pct=pcts,pd=plot.data.list))
 }
 
 match.mz.fun <- function(x,ref,tol=0.01) {
     return(match.mz(x$mz,ref,tol=tol))
-}
-
-updateShinyProgressBar <- function(shinyProgressData,pbValue,headerMsg="",
-    footerMsg="") {
-    
-    if (is.null(shinyProgressData))
-        return()
-    
-    if (is.null(shinyProgressData$progressTotal))
-        shinyProgressData$progressTotal <- 100
-    
-    updateProgressBar(
-        session=shinyProgressData$session,
-        id=shinyProgressData$progressId,
-        value=pbValue,
-        total=shinyProgressData$progressTotal
-    )
-    
-    shinyProgressData$session$sendCustomMessage(
-        "changeProgressHeader",list(value=headerMsg))
-    shinyProgressData$session$sendCustomMessage(
-        "changeProgressFooter",list(value=footerMsg))
 }

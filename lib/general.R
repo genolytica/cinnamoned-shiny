@@ -231,7 +231,7 @@ match.mz <- function(mznew,mzref,tol=0.01) {
     match.ref$mz.new[match.ref$mz.new==0] <- NA
     p <- 100*length(match.ref$new.idx)/length(mznew)
     p <- sprintf("%.3f",p)
-    cat("\n ",p,"% of new mz matched to reference mz with ",tol,
+    message("\n ",p,"% of new mz matched to reference mz with ",tol,
         " mz tolerance!\n",sep="")
     match.ref$pct <- p
     return(match.ref)
@@ -241,7 +241,7 @@ match.mz <- function(mznew,mzref,tol=0.01) {
 # fail : a case to be used when kmeans returns a unite cluster (e.g. the original rtref)
 # tol : deviation tolerance in each cluster
 is.retcor <- function(rtnew,rtref,iset,tspan=0.75,it=3,tol=2,fail=rtref,
-    corrfac=2,plotd=FALSE,...) {
+    corrfac=2,plotd=FALSE,shinyProgressData=NULL,...) {
     its <- 1
     mdev <- rep(999,length(iset))
 
@@ -251,8 +251,7 @@ is.retcor <- function(rtnew,rtref,iset,tspan=0.75,it=3,tol=2,fail=rtref,
     iset <- iset[-bad]
 
     while (!all(mdev<tol) && its<=it) {
-        cat("\n---Retention time correction, iteration ",its,sep="")
-
+        message("---Retention time correction, iteration ",its,sep="")
         rtdev <- rtnew-rtref
         centers <- cbind(rtref[iset],rtdev[iset])
         dupe <- which(duplicated(centers))
@@ -311,7 +310,6 @@ is.retcor <- function(rtnew,rtref,iset,tspan=0.75,it=3,tol=2,fail=rtref,
         its <- its+1
         mdev <- cldev
     }
-    cat("\n")
 
     #return(rtcor)
     return(list(rtcor=rtcor,rtdevc=curv,excl=length(bad)))
@@ -473,6 +471,30 @@ adapt.span <- function(rel.size) {
 getTime <- function(type) {
     tt <- format(Sys.time(),format="%Y-%m-%d %H:%M:%S")
     return(paste(type," ",tt,": ",sep=""))
+}
+
+updateShinyProgressBar <- function(shinyProgressData,pbValue,headerMsg="",
+    footerMsg="") {
+    
+    if (is.null(shinyProgressData))
+        return()
+    
+    if (is.null(shinyProgressData$progressTotal))
+        shinyProgressData$progressTotal <- 100
+    
+    updateProgressBar(
+        session=shinyProgressData$session,
+        id=shinyProgressData$progressId,
+        value=pbValue,
+        total=shinyProgressData$progressTotal
+    )
+    
+    shinyProgressData$session$sendCustomMessage(
+        "changeProgressHeader",list(value=headerMsg,
+        tid=shinyProgressData$textId))
+    shinyProgressData$session$sendCustomMessage(
+        "changeProgressFooter",list(value=footerMsg,
+        tid=shinyProgressData$textId))
 }
 
 ##########################################################################################

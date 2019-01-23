@@ -68,7 +68,7 @@ boxplot.mat <- function(mat,tam,name=NULL,log.it="auto",y.lim="default",
     }
 
     if (!(output %in% c("same","shiny")))
-		# So as to be able to use par(mfxxx) from outside or Shiny
+        # So as to be able to use par(mfxxx) from outside or Shiny
         openGraphics(output,fil)
 
     if (two)
@@ -391,7 +391,7 @@ hist.zeros <- function(X,Y=NULL,what=c("each","total"),na=FALSE,output="x11",
     closeGraphics(output)
 }
 
-plotMzrt <- function(rt,mz,inten=NULL,iset=NULL,output="x11",fil=NULL,...) {
+plot.mzrt <- function(rt,mz,inten=NULL,iset=NULL,output="x11",fil=NULL,...) {
     if (!is.null(inten)) {
         if (max(inten) > 107) { # How possible it is to have intensity>1e+32
             log.scaled <- FALSE
@@ -417,8 +417,8 @@ plotMzrt <- function(rt,mz,inten=NULL,iset=NULL,output="x11",fil=NULL,...) {
 
     if (output!="same") { # So as to be able to use par(mfxxx) from outside
         if (output=="shiny") {
-			# Silently nothing, intercept by Shiny?
-		}
+            # Silently nothing, intercept by Shiny
+        }
         else if (output %in% c("pdf","ps","x11"))
             openGraphics(output,fil,width=12,height=6)
         else
@@ -502,8 +502,13 @@ plot.rtdev <- function(x,y,l=NULL,lx=NULL,ly=NULL,lcl=NULL,exclude=NULL,
         legp <- c(legp,20)
     }
 
-    if (output!="same") # So as to be able to use par(mfxxx) from outside
-        openGraphics(output,fil)
+    if (output!="same") { # So as to be able to use par(mfxxx) from outside
+        if (output=="shiny") { 
+            # Silently nothing, intercept by Shiny
+        }
+        else
+            openGraphics(output,fil)
+    }
 
     if (two) {
         par(mfrow=c(2,1),mar=c(3,3,3,3),oma=c(0.5,0.5,0,0),mgp=c(2,0.5,0),
@@ -577,7 +582,7 @@ plot.rtdev <- function(x,y,l=NULL,lx=NULL,ly=NULL,lcl=NULL,exclude=NULL,
         grid()
     }
 
-    if (output!="same")
+    if (!(output %in% c("same","shiny")))
         closeGraphics(output)
 }
 
@@ -703,13 +708,19 @@ plot.match <- function(rtr,mzr,rtn,mzn,rto=NULL,mzo=NULL,output="x11",
 
     if (output!="same") { # So as to be able to use par(mfxxx) from outside
         if (two) {
-            if (output %in% c("pdf","ps","x11"))
+            if (output=="shiny") {
+                # Silently nothing, intercept by Shiny
+            }
+            else if (output %in% c("pdf","ps","x11"))
                 openGraphics(output,fil,width=12,height=12)
             else
                 openGraphics(output,fil,width=1200,height=1200)
         }
         else {
-            if (output %in% c("pdf","ps","x11"))
+            if (output=="shiny") {
+                # Silently nothing, intercept by Shiny
+            }
+            else if (output %in% c("pdf","ps","x11"))
                 openGraphics(output,fil,width=12,height=6)
             else
                 openGraphics(output,fil,width=1200,height=600)
@@ -769,7 +780,7 @@ plot.match <- function(rtr,mzr,rtn,mzn,rto=NULL,mzo=NULL,output="x11",
         abline(v=gt,lty=3,col="lightgrey")
     }
     
-    if (output!="same")
+    if (!(output %in% c("same","shiny")))
         closeGraphics(output)
 }
 
@@ -790,7 +801,10 @@ plot.rvn <- function(x,y,sx=NULL,sy=NULL,lim=NULL,output="x11",fil=NULL,...) {
     }
     
     if (output!="same") { # So as to be able to use par(mfxxx) from outside
-        if (output %in% c("pdf","ps","x11"))
+        if (output=="shiny") { 
+            # Silently nothing, intercept by Shiny
+        }
+        else if (output %in% c("pdf","ps","x11"))
             openGraphics(output,fil,width=8,height=4)
         else
             openGraphics(output,fil,width=800,height=400)
@@ -815,7 +829,7 @@ plot.rvn <- function(x,y,sx=NULL,sy=NULL,lim=NULL,output="x11",fil=NULL,...) {
         points(a[abs(m)>=lim],m[abs(m)>=lim],pch=20,col="darkgrey")
     grid()
 
-    if (output!="same")
+    if (!(output %in% c("same","shiny")))
         closeGraphics(output)
 }
 
