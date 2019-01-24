@@ -63,8 +63,8 @@ initReactiveVars <- function() {
     #    refinedTimeBoundaries=list(c(960,2700),c(960,2700))
     #)
     
-    load("/media/HD3/cprocess_tmp/21012019193711/peaks.RData")
-    load("/media/HD3/cprocess_tmp/21012019193711/norm.RData")
+    #load("/media/HD3/cprocess_tmp/21012019193711/peaks.RData")
+    #load("/media/HD3/cprocess_tmp/21012019193711/norm.RData")
     
     reactiveVars$pipelineResults <- reactiveValues(
         #peaks=peaks,

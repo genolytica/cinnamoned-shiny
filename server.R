@@ -11,6 +11,7 @@ shinyServer(
         source("server/reactiveVars.R",local=TRUE)
         source("server/analysisTab/analysisItem.R",local=TRUE)
         source("server/databaseTab/databaseItem.R",local=TRUE)
+        source("server/runViewerTab/runViewerItem.R",local=TRUE)
         
         # Init packages
         initPackages(session)
@@ -29,6 +30,10 @@ shinyServer(
         
         # Database
         databaseTabPanelObserve(input,output,session,allReactiveVars,
+            allReactiveMsgs)
+                
+        # Run Viewer
+        runViewerTabPanelObserve(input,output,session,allReactiveVars,
             allReactiveMsgs)
     }
 )
