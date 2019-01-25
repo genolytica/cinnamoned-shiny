@@ -15,14 +15,23 @@ runViewerTabPanelEventReactive <- function(input,output,session,
 
 runViewerTabPanelReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
+	pipelineResults <- allReactiveVars$pipelineResults
 	
     finalAlignmentPlots <- reactive({
         # norm <- paste0("/media/HD3/cprocess_tmp/",input$runArchivedAnalysisViewer,"/norm.RData")
+        norm <- pipelineResults$norm
         if (!is.null(norm)) {
             pd <- norm$pd
             for (i in 1:length(pd)) {
             	
             	#Where does output[[..]] send stuff?? What's with the double [] ??
+            	# Output sends to the server-created UI, see line
+            	# [[...]] is access to a list element which cannot be accesses
+            	# by $, e.g. when you want to auto-generate a name.
+            	# Beware that norm variable is the expected output of the 
+            	# normalization procedure and is loaded from norm.RData. See
+            	# the test lines 67-75 of reactiveVars. Above (line 21), norm is 
+            	# just a string.
             	
                 output[[paste("finalAlignment",i,sep="_")]] <- renderPlot({
                     plot.match(

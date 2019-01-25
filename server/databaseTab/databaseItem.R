@@ -58,7 +58,7 @@ databaseTabPanelObserve <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
   metaboFilter <- allReactiveVars$metaboFilter
   
-  con <- dbConnect(drv=RSQLite::SQLite(), dbname="data/cinnamonDB.sqlite")
+  con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
   cinnamonDB <- dbGetQuery(con, "SELECT run_id,project_name,date FROM run_info ORDER BY date")
   names(cinnamonDB) <- c("Run ID", "Project Name", "Date")
   cinnamonDB$Date <- as.POSIXlt(cinnamonDB$Date, format = "%Y-%m-%d %H:%M:%S")

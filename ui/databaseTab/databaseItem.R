@@ -1,15 +1,20 @@
 databaseManageTabPanel <- function() {
-  fluidRow(column(8,h1("View Past Runs"),
-                  DT::dataTableOutput("runInfo")),
-  column(4, 
-    wellPanel(
-      h2("Run Details"),
-      hr(),
-      htmlOutput('paramsInfo'), 
-      style = "overflow: auto;",
-      class="well-panel")
-    )
-  )
+	fluidRow(column(7,
+		wellPanel(
+			h2("View past run info"),
+			hr(),
+			DT::dataTableOutput("runInfo"),
+			class="well-panel"
+		)
+	),column(5, 
+			wellPanel(
+				h2("Run Details"),
+				hr(),
+				htmlOutput('paramsInfo'), 
+				style = "overflow: auto;",
+				class="well-panel"
+			)
+	))
 }
 
 databaseModifyTabPanel <- function() {
