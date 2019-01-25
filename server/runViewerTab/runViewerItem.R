@@ -11,7 +11,8 @@ runViewerTabPanelEventReactive <- function(input,output,session,
 		if (selectedanalysis != ""){
 		selectedDir <- paste0(base,"/",selectedanalysis,"/")
 		normDir <- paste0(selectedDir,"norm.RData")
-		load(normDir)
+		#pipelineInput$normRda <- normDir
+		#load(pipelineInput$normRda)
 		output$analysis<-renderText({return(selectedDir)})
 		output$spectralTab<-renderText({return(paste("Plot will be generated using: ",normDir))})
 		}
@@ -35,15 +36,17 @@ runViewerTabPanelEventReactive <- function(input,output,session,
 
 runViewerTabPanelReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
+	
 	pipelineResults <- allReactiveVars$pipelineResults
+	pipelineInput <- allReactiveVars$pipelineInput
 
 	# Need to manually load user-selected analysis' "norm" so the run Viewer plots can be 
 	# generated independently 
 	# (e.g without a currently running analysis, or if user goes drectly to runViewr tab)
-	#norm<-load(file = "/media/HD3/cprocess_tmp/31082015120830/norm.RData")
+	
+	load(file = "/media/HD3/cprocess_tmp/31082015120830/norm.RData")
 	
     finalAlignmentPlots <- reactive({
-        norm <- pipelineResults$norm
         if (!is.null(norm)) {
             pd <- norm$pd
             for (i in 1:length(pd)) {
@@ -136,7 +139,6 @@ runViewerTabPanelObserve <- function(input,output,session,
     observe({
     		shinyjs::enable("runArchivedAnalysisViewer")
     		runArchivedAnalysisView()
-    		#load(selectedDir)
     })
     
     observe({
