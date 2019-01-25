@@ -1,12 +1,32 @@
 runViewerTabPanelEventReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
 	
-	test <- eventReactive(input$runArchivedAnalysisViewer, {
-		renderText({return(input$analysisID)})
+	pipelineResults <- allReactiveVars$pipelineResults
+	pipelineInput <- allReactiveVars$pipelineInput
+	
+	
+	runArchivedAnalysisView <- eventReactive(input$runArchivedAnalysisViewer, {
+		base <- pipelineInput$basePath
+		selectedanalysis <- input$analysisID
+		if (selectedanalysis != ""){
+		selectedDir <- paste0(base,"/",selectedanalysis,"/")
+		normDir <- paste0(selectedDir,"norm.RData")
+		load(normDir)
+		output$analysis<-renderText({return(selectedDir)})
+		output$spectralTab<-renderText({return(paste("Plot will be generated using: ",normDir))})
+		}
   	})
 	
+    getDiagTab <- eventReactive(input$runViewerDiagnosticPlots,{
+        val <- isolate(input$runViewerDiagnosticPlots)
+        if (!is.null(val))
+            pipelineResults$currentIndex <- 
+                as.numeric(strsplit(val,"_")[[1]][2])
+    })
+	
 	return(list(
-		test=test
+		runArchivedAnalysisView=runArchivedAnalysisView,
+		getDiagTab=getDiagTab
 	))
 
 
@@ -16,24 +36,18 @@ runViewerTabPanelEventReactive <- function(input,output,session,
 runViewerTabPanelReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
 	pipelineResults <- allReactiveVars$pipelineResults
+
+	# Need to manually load user-selected analysis' "norm" so the run Viewer plots can be 
+	# generated independently 
+	# (e.g without a currently running analysis, or if user goes drectly to runViewr tab)
+	norm<-load(file = "/media/HD3/cprocess_tmp/31082015120830/norm.RData")
 	
     finalAlignmentPlots <- reactive({
-        # norm <- paste0("/media/HD3/cprocess_tmp/",input$runArchivedAnalysisViewer,"/norm.RData")
         norm <- pipelineResults$norm
         if (!is.null(norm)) {
             pd <- norm$pd
             for (i in 1:length(pd)) {
-            	
-            	#Where does output[[..]] send stuff?? What's with the double [] ??
-            	# Output sends to the server-created UI, see line
-            	# [[...]] is access to a list element which cannot be accesses
-            	# by $, e.g. when you want to auto-generate a name.
-            	# Beware that norm variable is the expected output of the 
-            	# normalization procedure and is loaded from norm.RData. See
-            	# the test lines 67-75 of reactiveVars. Above (line 21), norm is 
-            	# just a string.
-            	
-                output[[paste("finalAlignment",i,sep="_")]] <- renderPlot({
+                output$spectralTab <- renderPlot({
                     plot.match(
                         pd[[i]]$rtref,
                         pd[[i]]$ref$mz[pd[[i]]$match.ref[[i]]$ref.idx],
@@ -55,16 +69,18 @@ runViewerTabPanelReactive <- function(input,output,session,
 
 runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
+	
+	pipelineInput <- allReactiveVars$pipelineInput
 
 	output$spectralTab <- renderUI({
             fluidRow(column(12,
                 wellPanel(
-                    h4("test"),
+                    h4("testt"),
                     hr(),
                     do.call(tabsetPanel,c(
-                        id="analysisDiagnosticPlots",
+                        id="runViewerDiagnosticPlots",
                         
-                        #need to get the filenames
+                        #need to get the filenames without a currently running analysis
                         
                         lapply(1:length(pipelineInput$filenames),function(i,n) {
                             tabPanel(
@@ -81,15 +97,14 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
                                             tags$span(style="font-weight:600",
                                                 n[i])
                                         ),
-                                        plotOutput(paste("finalAlignment",i,
-                                            sep="_"),height="1200px")
+                                        plotOutput(spectralTab,height="1200px")
                                     )),
                                     class="well-panel"
                                 ),
                                 value=paste("diagTab",i,sep="_")
                             )
                         	
-                        #need to get the filenames
+                        #need to get the filenames without a currently running analysis
                         	
                         },pipelineInput$filenames)
                     )),
@@ -107,8 +122,9 @@ runViewerTabPanelObserve <- function(input,output,session,
         runViewerTabPanelEventReactive(input,output,session,
             allReactiveVars,allReactiveMsgs)
 
-	test <- runViewerTabPanelReactiveEvents$test
-	
+		runArchivedAnalysisView <- runViewerTabPanelReactiveEvents$runArchivedAnalysisView
+		getDiagTab <- runViewerTabPanelReactiveEvents$getDiagTab
+		
 	# Initialize observing reactive expressions
     runViewerTabPanelReactiveExprs <- 
         runViewerTabPanelReactive(input,output,session,allReactiveVars,
@@ -118,13 +134,13 @@ runViewerTabPanelObserve <- function(input,output,session,
 	
     #DRAFT# user input observer
     observe({
-    	selectedID <- input$analysisID
-    	if (selectedID == "31082015120830") {
     		shinyjs::enable("runArchivedAnalysisViewer")
-    		selectedDir <- paste0("/media/HD3/cprocess_tmp/",selectedID,"/norm.RData")
-    		load(selectedDir)
-    		output$analysis <- renderText(return(selectedDir))
-    	}
+    		runArchivedAnalysisView()
+    		#load(selectedDir)
+    })
+    
+    observe({
+        getDiagTab()
     })
     
     observe({

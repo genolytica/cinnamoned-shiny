@@ -11,9 +11,10 @@ runViewerTabPanel <- function() {
                 	inputId = "analysisID",
                 	label = "",
                 	value = "",
-                	placeholder = "Please type an analysis ID"
+                	placeholder = "e.g: 31082015120830"
                 )
-              	)),column(6,
+              	)),
+				column(6,
                     div(
                         class="pull-right",
                         style="display:inline-block",
@@ -26,7 +27,16 @@ runViewerTabPanel <- function() {
                     )
                 )
 			)
-		)),
+		),
+      			column(6,
+                    wellPanel(
+	    				h2("Analysis Directory (TEST)"),
+	      				hr(),
+	      				verbatimTextOutput('analysis'), 
+	      				style = "overflow: auto;",
+	      				class="well-panel"
+	    			)
+                )),
 		tabsetPanel(
 			id="resultTabset",
             tabPanel(
@@ -36,15 +46,6 @@ runViewerTabPanel <- function() {
             tabPanel(
                 fluidRow(br()),
                 title="Spectral plots",
-                fluidRow(column(8,
-                    wellPanel(
-	    				h2("ID to Query with"),
-	      				hr(),
-	      				verbatimTextOutput('analysis'), 
-	      				style = "overflow: auto;",
-	      				class="well-panel"
-	    			)
-                )),
 	    		fluidRow(column(12,
             		h2("Spectral plot"),
 	    			hr(),
