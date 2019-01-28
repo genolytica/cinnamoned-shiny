@@ -10,7 +10,9 @@ shinyServer(
         # Load SeqCVIBE libs
         source("server/reactiveVars.R",local=TRUE)
         source("server/analysisTab/analysisItem.R",local=TRUE)
-        source("server/databaseTab/databaseItem.R",local=TRUE)
+        source("server/databaseTab/databaseManageItem.R",local=TRUE)
+        source("server/databaseTab/databaseModifyItem.R",local=TRUE)
+        source("server/databaseTab/databaseSearchItem.R",local=TRUE)
         source("server/runViewerTab/runViewerItem.R",local=TRUE)
         
         # Init packages
@@ -29,7 +31,11 @@ shinyServer(
             allReactiveMsgs)
         
         # Database
-        databaseTabPanelObserve(input,output,session,allReactiveVars,
+        databaseManageTabPanelObserve(input,output,session,allReactiveVars,
+            allReactiveMsgs)
+        databaseModifyTabPanelObserve(input,output,session,allReactiveVars,
+            allReactiveMsgs)
+        databaseSearchTabPanelObserve(input,output,session,allReactiveVars,
             allReactiveMsgs)
                 
         # Run Viewer

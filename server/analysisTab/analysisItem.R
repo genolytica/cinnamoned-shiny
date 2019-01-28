@@ -3,9 +3,10 @@ analysisTabPanelEventReactive <- function(input,output,session,
     # Retrieve control ractive variables
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
-    #timeFilter <- allReactiveVars$timeFilter
-    #readSpec <- allReactiveVars$readSpec
-    #findPeaks <- allReactiveVars$findPeaks
+    timeFilter <- allReactiveVars$timeFilter
+    readSpec <- allReactiveVars$readSpec
+    findPeaks <- allReactiveVars$findPeaks
+    normPeaks <- allReactiveVars$normPeaks
     pipelineResults <- allReactiveVars$pipelineResults
     
     runPreprocess <- eventReactive(input$runPreprocessing,{
@@ -184,7 +185,6 @@ analysisTabPanelEventReactive <- function(input,output,session,
             value=allReactiveVars$timeFilter$min)
         updateNumericInput(session,inputId="filterTimeMax",
             value=allReactiveVars$timeFilter$max)
-        #TODO: All the rest inputs - DONE?
         updateNumericInput(session,inputId="profileStep",
             value=allReactiveVars$readSpec$profstep)
         updateNumericInput(session,inputId="xcmsSNR",
@@ -259,8 +259,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
             value=allReactiveVars$normPeaks$corrfac)
         updateNumericInput(session,inputId="cutq",
             value=allReactiveVars$normPeaks$cutq)
-        updateSelectInput(session,inputId="diagPlots",
-            selected=allReactiveVars$normPeaks$diagPlots)
+        updateSelectInput(session,inputId="normalize",
+            selected=allReactiveVars$normPeaks$normalize)
         updateNumericInput(session,inputId="ispan",
             value=allReactiveVars$normPeaks$ispan)
         updateNumericInput(session,inputId="corrfacNS",
@@ -301,13 +301,26 @@ analysisTabPanelEventReactive <- function(input,output,session,
             file.path(pipelineInput$scriptPath,"norm.Rout")
         normLog <- file(pipelineInput$normLogFile,open="wt")
         
+        # Update reactive vars
+        normPeaks$method=as.character(input$method)
+        normPeaks$correctfor=as.character(input$correctfor)
+        normPeaks$mztol=as.numeric(input$mztol)
+        normPeaks$export=as.character(input$export)
+        normPeaks$tspan=as.numeric(input$tspan)
+        normPeaks$tit=as.numeric(input$tit)
+        normPeaks$corrfac=as.numeric(input$corrfac)
+        normPeaks$cutq=as.numeric(input$cutq)
+        normPeaks$normalize=as.character(input$normalize)
+        normPeaks$ispan=as.numeric(input$ispan)
+        normPeaks$corrfacNS=as.numeric(input$corrfacNS)
+        
         # Show progress stuff
         shinyjs::show("progressWrapperN")
         shinyjs::html("normalizationProgress","Normalization running!")
         
         # Disable controls while running
         normInputs <- c("method","correctfor","mztol","diagPlotsInclude",
-           "export","tspan","it","corrfac","cutq","diagPlots","ispan",
+           "export","tspan","it","corrfac","cutq","normalize","ispan",
            "corrfacNS")
         sapply(normInputs,shinyjs::disable)
         
@@ -318,7 +331,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
             peaks=isolate(pipelineResults$peaks),
             dbdata=METABO_DB,
             method=as.character(input$method),
-            normalize="rlm",
+            normalize=as.character(input$normalize),
             correctfor=as.character(input$correctfor),
             time.range=pipelineInput$refinedTimeBoundaries,
             tol=as.numeric(input$mztol),
@@ -357,21 +370,148 @@ analysisTabPanelEventReactive <- function(input,output,session,
     discardAnalysis <- eventReactive(input$discardAnalysis,{
         # TODO: Reset EVERYTHING (see functions above) and also files
         
+        # Delete run directory if analysis not saved
+        if (!pipelineControl$analysisSaved)
+			unlink(pipelineInput$runPath,recursive=TRUE)
+        
         # Go to first page
         pipelineControl$step <- "preprocess"
+        pipelineControl$uiError <- FALSE
     })
     
     saveAnalysis <- eventReactive(input$saveAnalysis,{
-        # TODO: Write parameters to SQLite and display a message (essentially
-        # update the button with "Saved" and disable). Discard becomes "New"
+        # Run parameters list
+        runParameters <- list(
+			ref_run_id=paste('\'',pipelineInput$currentRunId,'\'',sep=""),
+			xcms_filter_do=ifelse(timeFilter$do,1,0),
+			xcms_filter_min=timeFilter$min,
+			xcms_filter_max=timeFilter$max,
+			xcms_read_profstep=readSpec$profstep,
+			xcms_read_profmethod=paste('\'',readSpec$profmethod,'\'',sep=""),
+			xcms_find_snthresh=findPeaks$snthresh,
+			xcms_find_step=findPeaks$step,
+			xcms_find_fwhm=findPeaks$fwhm,
+			xcms_find_sigma=findPeaks$sigma,
+			xcms_find_steps=findPeaks$steps,
+			xcms_find_max=findPeaks$max,
+			xcms_find_mzdiff=findPeaks$mzdiff,
+			norm_method=paste('\'',normPeaks$method,'\'',sep=""),
+			norm_tol=normPeaks$mztol,
+			norm_correctfor=paste('\'',normPeaks$correctfor,'\'',sep=""),
+			norm_export=paste('\'',normPeaks$export,'\'',sep=""),
+			norm_diagplot=ifelse(normPeaks$diagPlotsInclude,1,0),
+			norm_tspan=normPeaks$tspan,
+			norm_tit=normPeaks$tit,
+			norm_normalize=paste('\'',normPeaks$normalize,'\'',sep=""),
+			norm_corrfac=normPeaks$corrfac,
+			norm_ispan=normPeaks$ispan,
+			norm_cutrat=normPeaks$corrfacNS,
+			norm_cutq=normPeaks$cutq,
+			norm_times=paste('\'',paste(pipelineInput$refinedTimeBoundaries,
+				collapse=","),'\'',sep="")
+        )
+			
+		# Run info list
+		runInfo <- list(
+			run_id=paste('\'',pipelineInput$currentRunId,'\'',sep=""),
+			project_name=paste('\'',pipelineInput$projectName,'\'',sep=""),
+			project_path=paste('\'',pipelineInput$runPath,'\'',sep=""),
+			diagnostic_preprocess_path=paste('\'',
+				pipelineInput$diagPathPreprocess,'\'',sep=""),
+			diagnostic_normalization_path=paste('\'',
+				pipelineInput$diagPathNormalization,'\'',sep=""),
+			yaml_file=paste('\'',pipelineInput$xcmsParamFile,'\'',sep=""),
+			class_file=paste('\'',pipelineInput$sampleInfoFile,'\'',sep=""),
+			rdata_peaks_file=paste('\'',pipelineInput$peaksRda,'\'',sep=""),
+			rdata_norm_file=paste('\'',pipelineInput$normRda,'\'',sep=""),
+			result_file=paste('\'',file.path(pipelineInput$runPath,
+				"norm_output.txt"),'\'',sep=""),
+			peak_detection_script=NULL,
+			normalization_script=NULL
+		)
+		
+		# Construct run parameters query
+		paramQuery <- paste("INSERT INTO `run_parameters` (",
+			paste(names(runParameters),collapse=","),") VALUES (",
+			paste(runParameters,collapse=","),")",sep="")
+		
+		# Construct run info query
+		infoQuery <- paste("INSERT INTO `run_info` (",
+			paste(names(runInfo),collapse=","),") VALUES (",
+			paste(runInfo,collapse=","),")",sep="")
+			
+		# Booleans to control what has been written
+		paramWritten <- infoWritten <- FALSE
+		
+		# Keep a log
+		pipelineInput$dbWriteLogFile <- 
+            file.path(pipelineInput$scriptPath,"dbwrite.Rout")
+        dbLog <- file(pipelineInput$dbWriteLogFile,open="wt")
+        
+        sink(dbLog)
+        sink(dbLog,type="message")
+		
+		# Open connection
+		tryCatch({
+			con <- dbConnect(SQLite(),dbname=APP_DB)
+			
+			# Write data
+			tryCatch({
+				message("Sending query to write run parameters:")
+				message(paramQuery)
+				rs1 <- dbSendQuery(con,paramQuery)
+				dbClearResult(rs1)
+				paramWritten <- TRUE
+			},error=function(e) {
+				message("Caught error while writing run parameters:")
+				message(e)
+				paramWritten <- FALSE
+			},finally="")
+			
+			tryCatch({
+				message("Sending query to write run info:")
+				message(infoQuery)
+				rs2 <- dbSendQuery(con,infoQuery)
+				dbClearResult(rs2)
+				infoWritten <- TRUE
+			},error=function(e) {
+				message("Caught error while writing run info:")
+				message(e)
+				infoWritten <- FALSE
+			},finally="")
+			
+			# Disconnect to remove lock
+			dbDisconnect(con)
+			
+			# Update buttons etc.
+			updateActionButton(session,"saveAnalysis",label="Analysis saved!",
+				icon=icon("thumbs-o-up"))
+			updateActionButton(session,"discardAnalysis",
+				label="Start new analysis",icon=icon("star"))
+			shinyjs::disable("saveAnalysis")
+			pipelineControl$analysisSaved <- TRUE
+		},error=function(e) {
+			message("Caught error: ",e)
+			# TODO: More things should happen here, like deleting what has been
+			# inserted, if anything. This is dependend on the paramWritten and
+			# infoWritten variables above
+			dbDisconnect(con)
+			pipelineControl$uiError <- TRUE
+		},finally="")
+		
+		sink(type="message")
+        sink()
     })
     
     getDiagTab <- eventReactive(input$analysisDiagnosticPlots,{
         if (pipelineControl$step == "result") {
-            val <- isolate(input$analysisDiagnosticPlots)
-            if (!is.null(val))
-                pipelineResults$currentIndex <- 
-                    as.numeric(strsplit(val,"_")[[1]][2])
+            val <- input$analysisDiagnosticPlots
+            if (!is.null(val)) {
+				pipelineResults$currentIndex <- 
+					as.numeric(strsplit(val,"_")[[1]][2])
+				updateTabsetPanel(session,"analysisDiagnosticPlots",
+					selected=val)
+			}
         }
     })
     
@@ -686,10 +826,11 @@ analysisTabPanelReactive <- function(input,output,session,
     
     # Sample classes
     classNames <- reactive({
-        pipelineInput$classes <- 
-            sapply(1:length(pipelineInput$filenames),function(i) {
-                return(as.character(input[[paste("className_",i,sep="")]]))
-            })
+		if (pipelineControl$step=="preprocess")
+			pipelineInput$classes <- 
+				sapply(1:length(pipelineInput$filenames),function(i) {
+					return(as.character(input[[paste("className_",i,sep="")]]))
+				})
     })
     
     # Spectral review plots
@@ -846,6 +987,70 @@ analysisTabPanelReactive <- function(input,output,session,
         }
     })
     
+    handleExportResultsDownload <- reactive({
+        output$exportResults <- downloadHandler(
+			filename=function() {
+				tt <- paste(pipelineInput$currentRunId,"_",
+					format(Sys.time(),format="%Y%m%d%H%M%S"),".txt",sep="")
+			},
+			content=function(con) {
+				peaks <- pipelineResults$peaks
+				norm <- pipelineResults$norm$norm
+				exportType <- input$export
+				
+				metaData <- tryCatch(attr(peaks,"meta.data"),
+					error=function(e) { 
+						return(NULL) 
+				},finally="")
+				
+				if (!is.list(peaks)) {
+					p <- list()
+					p[[1]] <- peaks
+					if (is.null(metaData))
+						names(p) <- "peakdata"
+					else
+						names(p) <- metaData$Samplename
+					peaks <- p
+				}
+				
+				if (!is.null(metaData))
+					expnames <- metaData$Replicate
+				else {
+					if (!is.null(names(peaks)))
+						expnames <- names(peaks)
+					else
+						expnames <- paste("Sample",1:length(peaks))
+				}
+				
+				normRef <- as.data.frame(norm$reference)
+				normMz <- as.data.frame(norm$mz)
+				normRt <- as.data.frame(norm$rt)
+				normInten <- as.data.frame(norm$norminten)
+				names(normMz) <- paste("mz - ",expnames)
+				names(normRt) <- paste("rt - ",expnames)
+				names(normInten) <- paste("Intensity - ",expnames)
+
+				if (exportType=="all") {
+					final <- cbind(normRef,normMz,normRt,normInten)
+					write.table(final,file=export,quote=FALSE,sep="\t",na="-",
+						row.names=FALSE)
+				}
+				else if (exportType=="armada") {
+					tmpNorm <- norm$norminten
+					tmpNorm[which(tmpNorm==0)] <- "NaN"
+					tmpNorm <- as.data.frame(tmpNorm)
+					names(tmpNorm) <- paste("Intensity - ",expnames)
+					final <- cbind(normRef[,"id"],tmpNorm)
+					nam <- names(final)
+					nam[1] <- "id"
+					names(final) <- nam
+					write.table(final,file=con,quote=FALSE,sep="\t",na="NaN",
+						row.names=FALSE)
+				}
+			}
+		)
+    })
+    
     # Conditional panel status according to analysis status
     output$panelStatus <- reactive({
         switch(pipelineControl$step,
@@ -912,7 +1117,8 @@ analysisTabPanelReactive <- function(input,output,session,
         finalBoxplots=finalBoxplots,
         finalRawint=finalRawint,
         finalNormint=finalNormint,
-        finalStdint=finalStdint
+        finalStdint=finalStdint,
+        handleExportResultsDownload=handleExportResultsDownload
     ))
 }
 
@@ -1034,12 +1240,13 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
                                 pipelineInput$currentRunId
                             ),
                             "has been successfully completed! The results can ",
-                            "be reviewed in the tabs below. You can also",
-                            "choose one of the following actions."
+                            "be reviewed in the tabs below. You can also ",
+                            "choose one of the following actions. Discard ",
+                            "analysis will get you to the new analysis page."
                         )
                     )),
                     fluidRow(br()),
-                    fluidRow(column(8,
+                    fluidRow(column(6,
                         div(
                             class="pull-left",
                             downloadButton(
@@ -1048,7 +1255,7 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
                                 class="btn-black"
                             )
                         )
-                    ),column(2,
+                    ),column(3,
                         div(
                             class="pull-left",
                             actionButton(
@@ -1057,7 +1264,7 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
                                 icon=icon("ban")
                             )
                         )
-                    ),column(2,
+                    ),column(3,
                         div(
                             class="pull-right",
                             actionButton(
@@ -1067,6 +1274,10 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
                                 icon=icon("floppy-o")
                             )
                         )
+                    )),
+                    fluidRow(column(12,
+						div(id="analysisWriteError",class="input-error",
+                            errorMessages$analysisWriteError)
                     )),
                     class="well-panel"
                 )
@@ -1276,6 +1487,8 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     finalRawint <- analysisTabPanelReactiveExprs$finalRawint
     finalNormint <- analysisTabPanelReactiveExprs$finalNormint
     finalStdint <- analysisTabPanelReactiveExprs$finalStdint
+    handleExportResultsDownload <- 
+		analysisTabPanelReactiveExprs$handleExportResultsDownload
     
     # Initialize UI element reactivity  
     analysisTabPanelRenderUI(output,session,allReactiveVars,allReactiveMsgs)
@@ -1457,20 +1670,6 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
      observe({
         resetNormalization()
     })
-     
-    ## ! Changed this to conditionalPanel to be more Shiny native
-    ## Disable Normalization inputs when "use defaults" is selected
-    #observe({
-    #    normInputs <- c("method","correctfor","mztol","diagPlotsInclude",
-    #       "export","tspan","it","corrfac","cutq","diagPlots","ispan",
-    #       "corrfacNS")
-    #    
-    #    enabledIf <- function(inputID) {
-    #        shinyjs::toggleState(inputID, input$normalizationParameters != "defaults")
-    #    }
-    #    
-    #    lapply(normInputs, enabledIf)
-    #})
    
     # Timefilter functions
     observe({
@@ -1514,13 +1713,17 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     
     # Observe reporting page buttons
     observe({
+        handleExportResultsDownload()
+    })
+    observe({
         saveAnalysis()
     })
     observe({
         discardAnalysis()
     })
+    
     observe({
-        getDiagTab()
+		getDiagTab()
     })
     
     # Observe reporting page

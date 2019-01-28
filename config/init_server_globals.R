@@ -27,6 +27,8 @@ RC <- 0.25
 METABO_DB <- "data/RFLab_MetaboDB.sqlite"
 APP_DB <- "data/cinnamonDB.sqlite"
 
+CURR <- 1
+
 # Error messages
 errorMessages <- list(
     projectName=paste("The project name must be smaller than 100", 
@@ -48,7 +50,10 @@ errorMessages <- list(
     corrFac="LOESS singularity correction factor must be a real number >= 0!",
     cutQ="RT deviation exclusion quantile real number >= 0!",
     iSpan="LOESS span must be a real number >= 0!",
-    corrFacNS="Non-standards correction factor must be a real number >= 0!"
+    corrFacNS="Non-standards correction factor must be a real number >= 0!",
+    analysisWriteError=paste("An error has been occured while writing results",
+		"the database! Please report to the administrator with the analysis",
+		"ID above.")
     
 )
 

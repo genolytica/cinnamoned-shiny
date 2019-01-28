@@ -8,7 +8,9 @@ require(shinyWidgets)
 source("config/init_server_globals.R")
 source("ui/analysisTab/analysisItem.R")
 source("ui/runViewerTab/runViewerItem.R")
-source("ui/databaseTab/databaseItem.R")
+source("ui/databaseTab/databaseManageItem.R")
+source("ui/databaseTab/databaseModifyItem.R")
+source("ui/databaseTab/databaseSearchItem.R")
 source("ui/aboutTab/aboutItem.R")
 
 shinyUI(fluidPage(
@@ -26,13 +28,8 @@ shinyUI(fluidPage(
             '});'
         )
     ),
-    tags$head(
-        tags$link(
-            rel="stylesheet",
-            type="text/css",
-            href="cinnamoned.css"
-        )
-    ),
+    includeCSS("www/cinnamoned.css"),
+    includeCSS("www/tables.css"),
     fluidRow(column(7,
         div(
             style="padding:0px; border-width:0px;",

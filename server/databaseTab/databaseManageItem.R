@@ -1,60 +1,16 @@
-databaseTabPanelEventReactive <- function(input,output,session,
+databaseManageTabPanelEventReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
 }
 
-databaseTabPanelReactive <- function(input,output,session,
+databaseManageTabPanelReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
-	
-	filter <- reactive({input$metaboliteFilters})
-	
-	metaboHmdbidFilter <- reactive({
-		if (input$metaboliteFilters=='hmdbID') {
-			filter=input$metaboFiltersHmdbID
-		}
-	})
-	
-	validateMZRangeFrom <- reactive({
-        mzrangefrom <- as.numeric(input$lowerLimit)
-        if (mzrangefrom < 0 || is.na(mzrangefrom)) {
-            return(FALSE)
-        }
-        else {
-            return(TRUE)
-        }
-    })
-	
-    validateMZRangeTo <- reactive({
-        mzrangeto <- as.numeric(input$upperLimit)
-        if (mzrangeto < 0 || is.na(mzrangeto)) {
-            return(FALSE)
-        }
-        else {
-            return(TRUE)
-        }
-    })
-    
-    validateHMDBid <- reactive({
-        hmdbid <- input$metaboFiltersHmdbID
-        if (hmdbid == "") {
-            return(FALSE)
-        }
-        else {
-            return(TRUE)
-        }
-    })
-    return(list(
-        validateMZRangeFrom=validateMZRangeFrom,
-        validateMZRangeTo=validateMZRangeTo,
-        validateHMDBid=validateHMDBid,
-        filter=filter
-    ))
 }
 
-databaseTabPanelRenderUI <- function(output,session,allReactiveVars,
+databaseManageTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
 }
 
-databaseTabPanelObserve <- function(input,output,session,
+databaseManageTabPanelObserve <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
   metaboFilter <- allReactiveVars$metaboFilter
   
@@ -63,12 +19,12 @@ databaseTabPanelObserve <- function(input,output,session,
   names(cinnamonDB) <- c("Run ID", "Project Name", "Date")
   cinnamonDB$Date <- as.POSIXlt(cinnamonDB$Date, format = "%Y-%m-%d %H:%M:%S")
   runInfoTable <- datatable(cinnamonDB, 
-                            rownames = FALSE,
-                            filter = 'bottom',
-                            class = 'cell-border strip hover',
+                            rownames=FALSE,
+                            class="display",
+                            filter = 'top',
                             selection = list(
                               mode="single",
-                              target = 'cell')
+                              target = 'cell'),
                             ) %>% formatStyle(1, cursor = 'alias')
   
   output$runInfo = DT::renderDataTable({
@@ -154,46 +110,4 @@ databaseTabPanelObserve <- function(input,output,session,
                categoryTitle3, normMethod, normTol, normCorrectFor, normExport, normDiagPlot, normTspan, normTit, normCorrFac,
                normCutQ, normNormalize, normIntSpan, normCutRat, normTimes, categoryTitle4, sep="<br/>"))
   })
-  
-  # Initialize observing reactive expressions
-  databaseTabPanelReactiveExprs <- 
-  	databaseTabPanelReactive(input,output,session,allReactiveVars,
-    	allReactiveMsgs)
-        
-    validateMZRangeFrom <- 
-        databaseTabPanelReactiveExprs$validateMZRangeFrom
-    validateMZRangeTo <- 
-        databaseTabPanelReactiveExprs$validateMZRangeTo
-    validateHMDBid <- 
-        databaseTabPanelReactiveExprs$validateHMDBid
-    filter <- 
-        databaseTabPanelReactiveExprs$filter
-
-   # Set the observers
-   # Validators
-  	observe({
-    	if (validateHMDBid())
-      		shinyjs::enable("calculateMetaboFilter")
-    	else
-    		shinyjs::disable("calculateMetaboFilter")
-  		output$filter <- renderText(
-  		if (filter() == 'hmdbID'){
-  			#Metabolite ID QUERY HERE 
-  			return(input$metaboFiltersHmdbID)
-  		}
-  	)
-  	})
- 
-  	observe({
-    	if (validateMZRangeTo() && validateMZRangeFrom())
-      		shinyjs::enable("calculateMetaboFilter")
-    	else
-    		shinyjs::disable("calculateMetaboFilter")
-  		  	 output$filter <- renderText(
-  		if (filter() == 'mzRange'){
-  			#m/z range QUERY HERE
-  			return(paste(input$lowerLimit, input$upperLimit))
-  		}
-  	)
-  	})
 }

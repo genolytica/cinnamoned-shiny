@@ -40,7 +40,7 @@ runViewerTabPanelReactive <- function(input,output,session,
 	# Need to manually load user-selected analysis' "norm" so the run Viewer plots can be 
 	# generated independently 
 	# (e.g without a currently running analysis, or if user goes drectly to runViewr tab)
-	norm<-load(file = "/media/HD3/cprocess_tmp/31082015120830/norm.RData")
+	#norm<-load(file = "/media/HD3/cprocess_tmp/31082015120830/norm.RData")
 	
     finalAlignmentPlots <- reactive({
         norm <- pipelineResults$norm

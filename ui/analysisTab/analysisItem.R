@@ -486,7 +486,7 @@ analysisTabPanelNormalization <- function() {
                             class="well-panel",
                                 fluidRow(column(6,
                                     selectInput(
-                                        inputId="diagPlots", 
+                                        inputId="normalize", 
                                         label = "Normalization method", 
                                         choices = list(
                                             "LOESS"="loess",
