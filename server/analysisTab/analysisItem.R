@@ -1197,7 +1197,7 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
                             )),
                             div(id=paste("filterTimeMinError",i,sep="_"),
                                 class="input-error",
-                                errorMessages$filterTimeMin)
+                                ERROR_MESSAGES$filterTimeMin)
                         ),column(2,
                             disabled(numericInput(
                                 inputId=paste("reviewMaxTime",i,sep="_"),
@@ -1207,13 +1207,13 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
                             )),
                             div(id=paste("filterTimeMaxError",i,sep="_"),
                                 class="input-error",
-                                errorMessages$filterTimeMax)
+                                ERROR_MESSAGES$filterTimeMax)
                         ),column(6," "
                         ),
                         div(
                             id=paste("filterTimeCompError",i,sep="_"),
                             class="input-error",
-                            errorMessages$filterTimeComparison
+                            ERROR_MESSAGES$filterTimeComparison
                         )),
                         class="well-panel"
                     )
@@ -1277,7 +1277,7 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
                     )),
                     fluidRow(column(12,
 						div(id="analysisWriteError",class="input-error",
-                            errorMessages$analysisWriteError)
+                            ERROR_MESSAGES$analysisWriteError)
                     )),
                     class="well-panel"
                 )

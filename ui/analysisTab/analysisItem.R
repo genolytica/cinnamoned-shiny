@@ -33,7 +33,7 @@ analysisTabPanelPreprocess <- function() {
                         placeholder="Project name"
                     ),
                     div(id="projectNameError",class="input-error",
-                        errorMessages$projectName)
+                        ERROR_MESSAGES$projectName)
                 )),
                 fluidRow(column(12,
                     fileInput(
@@ -71,7 +71,7 @@ analysisTabPanelPreprocess <- function() {
                             min=0
                         ),
                         div(id="filterTimeMinError",class="input-error",
-                            errorMessages$filterTimeMin)
+                            ERROR_MESSAGES$filterTimeMin)
                     ),column(6,
                         numericInput(
                             inputId="filterTimeMax", 
@@ -80,10 +80,10 @@ analysisTabPanelPreprocess <- function() {
                             min=0
                         ),
                         div(id="filterTimeMaxError",class="input-error",
-                            errorMessages$filterTimeMax)
+                            ERROR_MESSAGES$filterTimeMax)
                     ),
                     div(id="filterTimeCompError",class="input-error",
-                        errorMessages$filterTimeComparison)
+                        ERROR_MESSAGES$filterTimeComparison)
                     )
                 ),
                 class="well-panel"
@@ -152,7 +152,7 @@ analysisTabPanelPreprocess <- function() {
                         )
                     ),
                     div(id="profStepError",class="input-error",
-                        errorMessages$profStep)
+                        ERROR_MESSAGES$profStep)
                 )),
                 conditionalPanel(
                     condition="input.xcmsDefaultParameters=='custom'",
@@ -169,7 +169,7 @@ analysisTabPanelPreprocess <- function() {
                                     min=1
                                 ),
                                 div(id="profileStepError",class="input-error",
-                                    errorMessages$profileStep)
+                                    ERROR_MESSAGES$profileStep)
                             ),column(6,
                                 selectInput(
                                     inputId="profileMethod",
@@ -194,7 +194,7 @@ analysisTabPanelPreprocess <- function() {
                                     value="7"
                                 ),
                                 div(id="xcmsSNRError",class="input-error",
-                                    errorMessages$xcmsSNR)
+                                    ERROR_MESSAGES$xcmsSNR)
                             ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCSize", 
@@ -202,7 +202,7 @@ analysisTabPanelPreprocess <- function() {
                                     value="0.1"
                                 ),
                                 div(id="xcmsEIBPCSizeError",class="input-error",
-                                    errorMessages$xcmsEIBPCSize)
+                                    ERROR_MESSAGES$xcmsEIBPCSize)
                             ),column(4,
                                 textInput(
                                     inputId="xcmsFWHM", 
@@ -210,7 +210,7 @@ analysisTabPanelPreprocess <- function() {
                                     value="30"
                                 ),
                                 div(id="xcmsFWHMError",class="input-error",
-                                    errorMessages$xcmsFWHM)
+                                    ERROR_MESSAGES$xcmsFWHM)
                             )),
                             fluidRow(column(4,
                                 textInput(
@@ -219,7 +219,7 @@ analysisTabPanelPreprocess <- function() {
                                     value="7"
                                 ),
                                 div(id="xcmsSigmaError",class="input-error",
-                                    errorMessages$xcmsSigma)
+                                    ERROR_MESSAGES$xcmsSigma)
                             ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCSteps", 
@@ -227,7 +227,7 @@ analysisTabPanelPreprocess <- function() {
                                     value="3"
                                 ),
                                 div(id="xcmsEIBPCStepsError",class="input-error",
-                                    errorMessages$xcmsEIBPCSteps)
+                                    ERROR_MESSAGES$xcmsEIBPCSteps)
                             ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCMaxPeaks", 
@@ -235,7 +235,7 @@ analysisTabPanelPreprocess <- function() {
                                     value="5"
                                 ),
                                 div(id="xcmsEIBPCMaxPeaksError",class="input-error",
-                                    errorMessages$xcmsEIBPCMaxPeaks)
+                                    ERROR_MESSAGES$xcmsEIBPCMaxPeaks)
                             ))
                         )
                     )
@@ -408,7 +408,7 @@ analysisTabPanelNormalization <- function() {
                                 ),
                                 div(
                                     id="mzTolError",class="input-error",
-                                    errorMessages$mzTol
+                                    ERROR_MESSAGES$mzTol
                                 )
                             )),
                             fluidRow(column(4,
@@ -451,7 +451,7 @@ analysisTabPanelNormalization <- function() {
                                 ),
                                 div(
                                     id="tSpanError",class="input-error",
-                                    errorMessages$tSpan
+                                    ERROR_MESSAGES$tSpan
                                 )
                             ),column(6,
                                 textInput(
@@ -460,7 +460,7 @@ analysisTabPanelNormalization <- function() {
                                     value="3"
                                 ),
                                 div(id="itError",class="input-error",
-                                    errorMessages$It)
+                                    ERROR_MESSAGES$It)
                             )),
                             fluidRow(column(6,textInput(
                                 inputId="corrfac", 
@@ -469,7 +469,7 @@ analysisTabPanelNormalization <- function() {
                                     value="2"
                                 ),
                                 div(id="corrFacError",class="input-error",
-                                    errorMessages$corrFac)
+                                    ERROR_MESSAGES$corrFac)
                             ),column(6,
                                 textInput(
                                     inputId="cutq", 
@@ -477,7 +477,7 @@ analysisTabPanelNormalization <- function() {
                                     value="0.98"
                                 ),
                                 div(id="cutQError",class="input-error",
-                                    errorMessages$cutQ)
+                                    ERROR_MESSAGES$cutQ)
                             ))
                         ),
                         tabPanel(
@@ -503,7 +503,7 @@ analysisTabPanelNormalization <- function() {
                                         value="0"
                                     ),
                                     div(id="iSpanError",class="input-error",
-                                        errorMessages$iSpan)
+                                        ERROR_MESSAGES$iSpan)
                               )),
                               fluidRow(column(6,
                                   textInput(
@@ -512,7 +512,7 @@ analysisTabPanelNormalization <- function() {
                                       value="2"
                                   ),
                                   div(id="corrFacNSError",class="input-error",
-                                      errorMessages$corrFacNS)
+                                      ERROR_MESSAGES$corrFacNS)
                               ))
                         )
                     )

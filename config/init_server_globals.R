@@ -27,10 +27,8 @@ RC <- 0.25
 METABO_DB <- "data/RFLab_MetaboDB.sqlite"
 APP_DB <- "data/cinnamonDB.sqlite"
 
-CURR <- 1
-
 # Error messages
-errorMessages <- list(
+ERROR_MESSAGES <- list(
     projectName=paste("The project name must be smaller than 100", 
         "characters and cannot contain the special characters",
         "\ / @ # $ & * ` ! ( ) % ^ , . < > ? | ' ; [ ] \" or space"),
@@ -43,7 +41,8 @@ errorMessages <- list(
     xcmsFWHM="Full width at half maximum must be an integer greater than 0!",
     xcmsSigma="Peak model standard deviation (sigma) must be an integer >= 0!",
     xcmsEIBPCSteps="EIBPC steps to combine must be an integer greater than 0!",
-    xcmsEIBPCMaxPeaks="Maximum peaks per EIBPC must be an integer greater than 0!",
+    xcmsEIBPCMaxPeaks=paste("Maximum peaks per EIBPC must be an integer",	
+		"greater than 0!"),
     mzTol="m/z tolerance must be a real number greater than 0!",
     tSpan="LOESS span must be a real number >= 0!",
     It="Alignment algorithm iterrations must be a real number >= 0!",
@@ -54,7 +53,55 @@ errorMessages <- list(
     analysisWriteError=paste("An error has been occured while writing results",
 		"the database! Please report to the administrator with the analysis",
 		"ID above.")
-    
+)
+
+# Database queries
+DB_QUERIES <- list(
+	INFO_ALL=paste('SELECT `run_id`,`project_name`,`date` FROM `run_info`',
+		'ORDER BY `date`'),
+	INFO_DATES_1=paste('SELECT `run_id`,`project_name`,`date` FROM `run_info`',
+		'WHERE `date`>='),
+	INFO_DATES_2=' AND `date`<=',
+	INFO_DATES_3=' ORDER BY `date`',
+	INFO_PARAMS=paste('SELECT `ref_run_id`, `xcms_filter_do`,',
+		'`xcms_filter_min`, `xcms_filter_max`, `xcms_read_profstep`,',
+		'`xcms_read_profmethod`, `xcms_find_snthresh`, `xcms_find_step`,',	
+		'`xcms_find_fwhm`, `xcms_find_sigma`, `xcms_find_steps`,',
+		'`xcms_find_max`, `xcms_find_mzdiff`, `norm_method`, `norm_tol`,',
+		'`norm_correctfor`, `norm_export`, `norm_diagplot`, `norm_tspan`,',
+		'`norm_tit`, `norm_corrfac`, `norm_cutq`, `norm_normalize`,',
+		'`norm_ispan`, `norm_cutrat`, `norm_times` FROM `run_parameters`',
+		'WHERE `ref_run_id`='),
+	CLASS_DATA=paste('SELECT `project_name`, `project_path`, `class_file` FROM',
+		'`run_info` WHERE `run_id`='),
+	DIAG_DATA=paste('SELECT `project_name`, `project_path`,',
+		'`diagnostic_normalization_path`, `class_file` FROM `run_info` WHERE',
+		'WHERE `run_id`='),
+	RES_DATA='SELECT `project_path` FROM `run_info` WHERE `run_id`=',
+	AUTO_METAB_1='SELECT `id` FROM `peak_info` WHERE `id` LIKE',
+	AUTO_METAB_2='ORDER BY `id`',
+	METAB_BY_RANGE_1=paste('SELECT `id`, `mz`, `rt`, `real_mass` FROM',
+		'`peak_info` WHERE `mz`>='),
+	METAB_BY_RANGE_2='AND `mz`<=',
+	METAB_BY_RANGE_3='ORDER BY `mz`',
+	METAB_BY_ID_1=paste('SELECT `id`, `mz`, `rt`, `real_mass` FROM',
+		'`peak_info` WHERE `id` IN'),
+	METAB_BY_ID_2='ORDER BY `mz`',
+	METAB_INFO=paste('SELECT `id`, `mz`, `rt`, `mzmin`, `mzmax`, `rtmin`,',
+		'`rtmax`, `isotopes`, `adduct`, `real_mass`, `prop_formula`,',
+		'`theor_mass`, `summarized_intensity_geom`,',
+		'`summarized_intensity_rlm`, `summarized_intensity_both`,',
+		'`is_geom`, `is_rlm`, `is_both` FROM `peak_info` WHERE `id`='),
+	METAB_AN_1=paste('SELECT `hmdb_id`, `hmdb_formula`, `hmdb_name`,',
+		'`kegg_formula`, `kegg_name`, `chebi_id`, `chebi_formula`,',
+		'`chebi_name` FROM `meta_data` WHERE ABS(`real_mass`-'),
+	METAB_AN_2=')<=0.00000001',
+	DELETE_RUN='DELETE FROM `run_info` WHERE `run_id`=',
+	METAB_ALL_INFO=paste('SELECT `id`, `mz`, `rt`, `mzmin`, `mzmax`, `rtmin`,',
+		'`rtmax`, `isotopes`, `adduct`, `real_mass`, `prop_formula`,',
+		'`theor_mass`, `summarized_intensity_geom`,',
+		'`summarized_intensity_rlm`, `summarized_intensity_both`,',
+		'`is_geom`, `is_rlm`, `is_both` FROM `peak_info`')
 )
 
 # Maximum filesize

@@ -10,6 +10,7 @@ shinyServer(
         # Load SeqCVIBE libs
         source("server/reactiveVars.R",local=TRUE)
         source("server/analysisTab/analysisItem.R",local=TRUE)
+        source("server/databaseTab/databaseBrowseItem.R",local=TRUE)
         source("server/databaseTab/databaseManageItem.R",local=TRUE)
         source("server/databaseTab/databaseModifyItem.R",local=TRUE)
         source("server/databaseTab/databaseSearchItem.R",local=TRUE)
@@ -31,6 +32,8 @@ shinyServer(
             allReactiveMsgs)
         
         # Database
+        databaseBrowseTabPanelObserve(input,output,session,allReactiveVars,
+            allReactiveMsgs)
         databaseManageTabPanelObserve(input,output,session,allReactiveVars,
             allReactiveMsgs)
         databaseModifyTabPanelObserve(input,output,session,allReactiveVars,

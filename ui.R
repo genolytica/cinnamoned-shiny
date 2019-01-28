@@ -8,6 +8,7 @@ require(shinyWidgets)
 source("config/init_server_globals.R")
 source("ui/analysisTab/analysisItem.R")
 source("ui/runViewerTab/runViewerItem.R")
+source("ui/databaseTab/databaseBrowseItem.R")
 source("ui/databaseTab/databaseManageItem.R")
 source("ui/databaseTab/databaseModifyItem.R")
 source("ui/databaseTab/databaseSearchItem.R")
@@ -55,7 +56,10 @@ shinyUI(fluidPage(
             runViewerTabPanel()
         ),
         navbarMenu("Database",icon=icon("database"),
-            tabPanel("Manage",icon=icon("eye"),
+            tabPanel("Browse",icon=icon("eye"),
+                databaseBrowseTabPanel()
+            ),
+            tabPanel("Manage",icon=icon("cog"),
                 databaseManageTabPanel()
             ),
             tabPanel("Modify",icon=icon("pencil"),
