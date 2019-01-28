@@ -88,8 +88,16 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # error if something goes wrong.
         pipelineInput$sampleInfoFile <- 
             file.path(pipelineInput$runPath,"sample_info.txt")
+        tryCatch({
+        message("Writing Sample Info table in 'sample_info.txt'")
         write.table(siDf,pipelineInput$sampleInfoFile,sep="\t",quote=FALSE,
             row.names=FALSE)
+        }, error=function(e) {
+          message("following error: ",e)
+          shinyjs::html("analysisProgress","Writing Sample Info table")
+          shinyjs::html("sampleInfoError","Error writing Sample Info file!")
+          pipelineControl$uiError <- TRUE
+        })
         
         # 4. Write a YAML configuration file (maybe later switch to JSON)
         preParams <- list(
@@ -369,7 +377,87 @@ analysisTabPanelEventReactive <- function(input,output,session,
     
     discardAnalysis <- eventReactive(input$discardAnalysis,{
         # TODO: Reset EVERYTHING (see functions above) and also files
+      
+        # Reset runtime variables
+        allReactiveVars$resetTimefilter()
+        allReactiveVars$resetPreprocess()
+        allReactiveVars$resetNormalization()
         
+        allReactiveVars$pipelineInput$sampleInfoFile <- NULL
+        allReactiveVars$pipelineInput$classes <- NULL
+        
+        # Reset ALL inputs
+        updateTextInput(session,inputId = "projectName",
+            value=allReactiveVars$pipelineInput$projectName)
+        fileInput("projectFiles", NULL)
+        updateNumericInput(session,inputId="filterTimeMin",
+            value=allReactiveVars$timeFilter$min)
+        updateNumericInput(session,inputId="filterTimeMax",
+            value=allReactiveVars$timeFilter$max)
+        updateNumericInput(session,inputId="profileStep",
+            value=allReactiveVars$readSpec$profstep)
+        updateNumericInput(session,inputId="xcmsSNR",
+            value=allReactiveVars$findPeaks$snthresh)
+        updateNumericInput(session,inputId="xcmsEIBPCSize",
+            value=allReactiveVars$findPeaks$step)
+        updateNumericInput(session,inputId="xcmsFWHM",
+            value=allReactiveVars$findPeaks$fwhm)
+        updateNumericInput(session,inputId="xcmsSigma",
+            value=allReactiveVars$findPeaks$sigma)
+        updateNumericInput(session,inputId="xcmsEIBPCSteps",
+            value=allReactiveVars$findPeaks$steps)
+        updateNumericInput(session,inputId="xcmsEIBPCMaxPeaks",
+            value=allReactiveVars$findPeaks$max)
+        
+        updateSelectInput(session,inputId="method",
+            selected=allReactiveVars$normPeaks$method)
+        updateSelectInput(session,inputId="correctfor",
+            selected=allReactiveVars$normPeaks$correctfor)
+        updateNumericInput(session,inputId="mztol",
+            value=allReactiveVars$normPeaks$mztol)
+        updateCheckboxInput(session,inputId="diagPlotsInclude",
+            value=allReactiveVars$normPeaks$diagPlotsInclude)
+        updateSelectInput(session,inputId="export",
+            selected=allReactiveVars$normPeaks$export)
+        updateNumericInput(session,inputId="tspan",
+            value=allReactiveVars$normPeaks$tspan)
+        updateNumericInput(session,inputId="it",
+            value=allReactiveVars$normPeaks$it)
+        updateNumericInput(session,inputId="corrfac",
+            value=allReactiveVars$normPeaks$corrfac)
+        updateNumericInput(session,inputId="cutq",
+            value=allReactiveVars$normPeaks$cutq)
+        updateSelectInput(session,inputId="normalize",
+            selected=allReactiveVars$normPeaks$normalize)
+        updateNumericInput(session,inputId="ispan",
+            value=allReactiveVars$normPeaks$ispan)
+        updateNumericInput(session,inputId="corrfacNS",
+            value=allReactiveVars$normPeaks$corrfacNS)
+        
+        lapply(1:length(pipelineInput$filenames),function(i) {
+            updateNumericInput(
+                session=session,
+                inputId=paste("reviewMinTime",i,sep="_"),
+                value=600
+            )
+            updateNumericInput(
+                session=session,
+                inputId=paste("reviewMaxTime",i,sep="_"),
+                value=3000
+            )
+        })
+        
+        # Revert Analysis Progress well-panel
+        shinyjs::hide("progressWrapper")
+        shinyjs::html("analysisProgress","Analysis progress will be displayed here")
+        
+        # Re-enable disabled action Buttons
+        shinyjs::enable("runPreprocessing")
+        shinyjs::enable("runNormalization")
+        
+        # Detete currently uploaded inputs
+        #STILL NEED TO RESET FILE UPLOAD#
+
         # Delete run directory if analysis not saved
         if (!pipelineControl$analysisSaved)
 			unlink(pipelineInput$runPath,recursive=TRUE)
@@ -435,10 +523,16 @@ analysisTabPanelEventReactive <- function(input,output,session,
 			paste(names(runParameters),collapse=","),") VALUES (",
 			paste(runParameters,collapse=","),")",sep="")
 		
+		# Construct delete run parameters query
+		paramQueryRm <- paste("DELETE from run_parameters WHERE ref_run_id = '",pipelineInput$currentRunId,"'",sep = "")
+
 		# Construct run info query
 		infoQuery <- paste("INSERT INTO `run_info` (",
 			paste(names(runInfo),collapse=","),") VALUES (",
 			paste(runInfo,collapse=","),")",sep="")
+		
+		# Construct delete run info query
+		infoQueryRm <- paste("DELETE from run_info WHERE run_id = '",pipelineInput$currentRunId,"'",sep = "")
 			
 		# Booleans to control what has been written
 		paramWritten <- infoWritten <- FALSE
@@ -495,6 +589,16 @@ analysisTabPanelEventReactive <- function(input,output,session,
 			# TODO: More things should happen here, like deleting what has been
 			# inserted, if anything. This is dependend on the paramWritten and
 			# infoWritten variables above
+		  con <- dbConnect(SQLite(),dbname=APP_DB)
+		  
+		  
+		  if (infoWritten == FALSE || paramWritten == FALSE) {
+		      rs1Rm <- dbSendQuery(con,paramQueryRm)
+			    dbClearResult(rs1Rm)
+			    rs2Rm <- dbSendQuery(con,infoQueryRm)
+          dbClearResult(rs2Rm)
+		  }
+
 			dbDisconnect(con)
 			pipelineControl$uiError <- TRUE
 		},finally="")

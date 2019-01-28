@@ -282,6 +282,9 @@ analysisTabPanelPreprocess <- function() {
                         class="progressbar-header",
                         id="progressBarHeader_pre",""
                     ),
+                    div(
+                        id="sampleInfoError",""
+                    ),
                     progressBar(
                         id="preprocessProgressBar",
                         value=0,
