@@ -56,16 +56,16 @@ shinyUI(fluidPage(
             runViewerTabPanel()
         ),
         navbarMenu("Database",icon=icon("database"),
-            tabPanel("Browse",icon=icon("eye"),
+            tabPanel("Browse reference",icon=icon("eye"),
                 databaseBrowseTabPanel()
             ),
-            tabPanel("Manage",icon=icon("cog"),
+            tabPanel("Browse metadata",icon=icon("cog"),
                 databaseManageTabPanel()
             ),
-            tabPanel("Modify",icon=icon("pencil"),
-                databaseModifyTabPanel()
-            ),
-            tabPanel("Search",icon=icon("search"),
+            #tabPanel("Modify",icon=icon("pencil"),
+            #    databaseModifyTabPanel()
+            #),
+            tabPanel("Search metabolite",icon=icon("search"),
                 databaseSearchTabPanel()
             )
         ),

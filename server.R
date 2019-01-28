@@ -30,19 +30,19 @@ shinyServer(
         # Analysis
         analysisTabPanelObserve(input,output,session,allReactiveVars,
             allReactiveMsgs)
+            
+        # Run Viewer
+        runViewerTabPanelObserve(input,output,session,allReactiveVars,
+            allReactiveMsgs)
         
         # Database
         databaseBrowseTabPanelObserve(input,output,session,allReactiveVars,
             allReactiveMsgs)
         databaseManageTabPanelObserve(input,output,session,allReactiveVars,
             allReactiveMsgs)
-        databaseModifyTabPanelObserve(input,output,session,allReactiveVars,
-            allReactiveMsgs)
+        #databaseModifyTabPanelObserve(input,output,session,allReactiveVars,
+        #    allReactiveMsgs)
         databaseSearchTabPanelObserve(input,output,session,allReactiveVars,
-            allReactiveMsgs)
-                
-        # Run Viewer
-        runViewerTabPanelObserve(input,output,session,allReactiveVars,
-            allReactiveMsgs)
+            allReactiveMsgs)                
     }
 )

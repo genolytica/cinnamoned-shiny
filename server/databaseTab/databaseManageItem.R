@@ -8,30 +8,35 @@ databaseManageTabPanelReactive <- function(input,output,session,
 
 databaseManageTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
+    output$runInfo = renderDT({
+        con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
+        cinnamonDB <- dbGetQuery(con,DB_QUERIES$RUN_INFO_ALL)
+        dbDisconnect(con)
+        names(cinnamonDB) <- c("Run ID","Project name","Date")
+        cinnamonDB$Date <- as.POSIXct(cinnamonDB$Date,
+            format="%Y-%m-%d %H:%M:%S")
+        #cinnamonDB$Date$zone <- NULL
+        datatable(cinnamonDB,
+            rownames=FALSE,
+            class="display",
+            filter="top",
+            escape=FALSE,
+            selection=list(
+                mode="single",
+                target = 'cell'
+            )
+        ) %>% formatStyle(1,cursor='alias') %>% 
+            formatDate(3,method='toLocaleString')
+    })
 }
 
 databaseManageTabPanelObserve <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
-  metaboFilter <- allReactiveVars$metaboFilter
+    
+    databaseManageTabPanelRenderUI(output,session,allReactiveVars,
+        allReactiveMsgs)
   
-  con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
-  cinnamonDB <- dbGetQuery(con, "SELECT run_id,project_name,date FROM run_info ORDER BY date")
-  names(cinnamonDB) <- c("Run ID", "Project Name", "Date")
-  cinnamonDB$Date <- as.POSIXlt(cinnamonDB$Date, format = "%Y-%m-%d %H:%M:%S")
-  runInfoTable <- datatable(cinnamonDB, 
-                            rownames=FALSE,
-                            class="display",
-                            filter = 'top',
-                            selection = list(
-                              mode="single",
-                              target = 'cell'),
-                            ) %>% formatStyle(1, cursor = 'alias')
-  
-  output$runInfo = DT::renderDataTable({
-    runInfoTable
-  }, escape = FALSE)
-  
-  output$paramsInfo = renderUI({
+    output$paramsInfo = renderUI({
     info = input$runInfo_cell_clicked
     if (is.null(info$value) || info$col != 0) return(HTML('Click on a Run ID'))
     selectedID = info$value

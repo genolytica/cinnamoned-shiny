@@ -1,40 +1,43 @@
 databaseBrowseTabPanelEventReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
-		
-	return(list())
+        
+    return(list())
 }
 
 databaseBrowseTabPanelReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
-	
-	return(list())
+    
+    return(list())
 }
 
 databaseBrowseTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
-	
-	output$browseReferenceMetabolites <- renderUI({
-		con <- dbConnect(drv=RSQLite::SQLite(),dbname=METABO_DB)
-		metaboDB <- dbGetQuery(con,DB_QUERIES$METAB_ALL_INFO)
-		dbDisconnect(con)
-		#names(metaboDB) <- c("Run ID", "Project Name", "Date")
-		#cinnamonDB$Date <- as.POSIXlt(cinnamonDB$Date, format = "%Y-%m-%d %H:%M:%S")
-		output$browseReferenceMetabolites <- renderDT(
-			metaboDB,
-			rownames=FALSE,
-			class="display",
-			filter="top",
-			selection=list(
-				mode="single",
-				target="cell"
-			)
-		)
-	})
+    
+    output$browseReferenceMetabolites <- renderDT({
+        con <- dbConnect(drv=RSQLite::SQLite(),dbname=METABO_DB)
+        metaboDB <- dbGetQuery(con,DB_QUERIES$METAB_ALL_INFO)
+        dbDisconnect(con)
+        datatable(
+            metaboDB,
+            rownames=FALSE,
+            class="display",
+            filter="top",
+            options=list(
+                scrollX=TRUE
+            ),
+            #extensions='Buttons',
+            #buttons=I('colvis'),
+            selection=list(
+                mode="single",
+                target="cell"
+            )
+        )
+    })
 }
 
 databaseBrowseTabPanelObserve <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
-	databaseBrowseTabPanelReactiveEvents <- 
+    databaseBrowseTabPanelReactiveEvents <- 
         databaseBrowseTabPanelEventReactive(input,output,session,
             allReactiveVars,allReactiveMsgs)
             
@@ -43,5 +46,5 @@ databaseBrowseTabPanelObserve <- function(input,output,session,
             allReactiveMsgs)
             
     databaseBrowseTabPanelRenderUI(output,session,allReactiveVars,
-		allReactiveMsgs)
+        allReactiveMsgs)
 }

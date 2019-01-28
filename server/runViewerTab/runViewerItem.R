@@ -1,56 +1,163 @@
 runViewerTabPanelEventReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
-	
-	pipelineResults <- allReactiveVars$pipelineResults
-	pipelineInput <- allReactiveVars$pipelineInput
-	
-	
-	runArchivedAnalysisView <- eventReactive(input$runArchivedAnalysisViewer, {
-		base <- pipelineInput$basePath
-		selectedanalysis <- input$analysisID
-		if (selectedanalysis != ""){
-		selectedDir <- paste0(base,"/",selectedanalysis,"/")
-		normDir <- paste0(selectedDir,"norm.RData")
-		#pipelineInput$normRda <- normDir
-		#load(pipelineInput$normRda)
-		output$analysis<-renderText({return(selectedDir)})
-		output$spectralTab<-renderText({return(paste("Plot will be generated using: ",normDir))})
-		}
-  	})
-	
+    
+    pipelineInput <- allReactiveVars$pipelineInput
+    runArchive <- allReactiveVars$runArchive
+    
+    loadSelectedRun <- eventReactive(input$loadSelectedRun,{
+        if (!is.null(runArchive$runId)) {
+            # Check what exists in the run directory
+            runPath <- file.path(pipelineInput$basePath,runArchive$runId)
+            peakFile <- file.path(runPath,"peak.RData")
+            normFile <- file.path(runPath,"norm.RData")
+            tarFile <- file.path(runPath,paste(runArchive$runId,
+                ".tar.gz",sep=""))
+            if (!dir.exists(runPath) && (!file.exists(peakFile)
+                || !file.exists(normFile)) && !file.exists(tarFile)) {
+                runArchive$corrupted <- TRUE
+                print("Corrupted!")
+                return()
+                # Will throw a modal
+            }
+            
+            # 1. Compressed case, old version definitely, uncompress and 
+            # continue from there
+            if (file.exists(tarFile))
+                untar(tarFile,exdir=runPath)
+            # 2. Uncompressed case, old version (plot data need recalculation)
+            if (file.exists(peakFile)) {
+                z <- load(peakFile)
+                # peaks variable exists in the environment
+                v <- load(normFile)
+                # norm variable exist in the environment
+                
+                # The while normalization process must run again...
+                if (is.null(norm$pd)) {
+                    runArchive$normLogFile <- 
+                        file.path(runArchive$scriptPath,"norm.Rout")
+                    normLog <- file(runArchive$normLogFile,open="wt")
+                    
+                    # Retrieve parameteres from database
+                    con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
+                    runInfo <- dbGetQuery(con,DB_QUERIES$NORM_INFO_PARAMS)
+                    dbDisconnect(con)
+                    
+                    runArchive$normPeaks$method <- 
+                        as.character(runInfo$norm_method)
+                    runArchive$normPeaks$correctfor <-
+                        as.character(runInfo$norm_correctfor)
+                    runArchive$normPeaks$mztol <-
+                        as.numeric(runInfo$norm_tol)
+                    runArchive$normPeaks$export <-
+                        as.character(runInfo$norm_export)
+                    runArchive$normPeaks$tspan <-
+                        as.numeric(runInfo$norm_tspan)
+                    runArchive$normPeaks$tit <-
+                        as.numeric(runInfo$norm_tit)
+                    runArchive$normPeaks$corrfac <-
+                        as.numeric(runInfo$norm_corrfac)
+                    runArchive$normPeaks$cutq <-
+                        as.numeric(runInfo$norm_cutq)
+                    runArchive$normPeaks$normalize <-
+                        as.character(runInfo$norm_correctfor)
+                    runArchive$normPeaks$ispan <-
+                        as.numeric(runInfo$norm_ispan)
+                    runArchive$normPeaks$corrfacNS <-
+                        as.numeric(runInfo$norm_cutrat)
+                    
+                    # Show progress stuff
+                    shinyjs::show("progressWrapperA")
+                    shinyjs::html("normalizationProgressA",
+                        "Normalization running!")
+                    
+                    sink(normLog)
+                    sink(normLog,type="message")
+                    
+                    norm <- normalizeSamples(
+                        peaks=peaks,
+                        dbdata=METABO_DB,
+                        method=runArchive$normPeaks$method,
+                        normalize=runArchive$normPeaks$normalize,
+                        correctfor=runArchive$normPeaks$correctfor,
+                        time.range=runArchive$normPeaks$refinedTimeBoundaries,
+                        tol=runArchive$normPeaks$mztol,
+                        tspan=runArchive$normPeaks$tspan,
+                        ispan=runArchive$normPeaks$ispan,
+                        tit=runArchive$normPeaks$tit,
+                        cutq=runArchive$normPeaks$cutq,
+                        corrfac=runArchive$normPeaks$corrfac,
+                        cutrat=runArchive$normPeaks$input$corrfacNS,
+                        export=file.path(runArchive$runPath,"norm_output.txt"),
+                        diagplot=runPath,
+                        plottype="png",
+                        export.type=as.character(runArchive$normPeaks$export),
+                        shinyProgressData=list(
+                            session=session,
+                            progressId="normalizationProgressBarA",
+                            progressTotal=3,
+                            textId="normA"
+                        )
+                    )
+                    
+                    sink(type="message")
+                    sink()
+                    
+                    runArchive$normRda <- file.path(runArchive$runPath,
+                        "norm.RData")
+                    save(norm,file=runArchive$normRda)
+                }
+            }
+            
+            # Final assignments
+            meta <- attr(peaks,"meta.data")
+            runArchive$peaks <- peaks
+            runArchive$norm <- norm
+            runArchive$filenames <- meta$Filename
+            runArchive$classes <- meta$Class
+            runArchive$currentIndex <- 1
+        }
+    })
+    
     getDiagTab <- eventReactive(input$runViewerDiagnosticPlots,{
         val <- isolate(input$runViewerDiagnosticPlots)
         if (!is.null(val))
             pipelineResults$currentIndex <- 
                 as.numeric(strsplit(val,"_")[[1]][2])
     })
-	
-	return(list(
-		runArchivedAnalysisView=runArchivedAnalysisView,
-		getDiagTab=getDiagTab
-	))
+    
+    return(list(
+        loadSelectedRun=loadSelectedRun,
+        getDiagTab=getDiagTab
+    ))
 
 
 }
 
-
 runViewerTabPanelReactive <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
-	
-	pipelineResults <- allReactiveVars$pipelineResults
-	pipelineInput <- allReactiveVars$pipelineInput
+    
+    runArchive <- allReactiveVars$runArchive
+    
+    getCellClick <- reactive({
+        info <- input$pastRunInfo_cell_clicked
+        if (is.null(info$value) || info$col != 0) {
+            runArchive$runId <- NULL
+            shinyjs::disable("loadSelectedRun")
+            return()
+        }
+        else {
+            runArchive$runId <- info$value
+            shinyjs::enable("loadSelectedRun")
+        }
+    })
 
-	# Need to manually load user-selected analysis' "norm" so the run Viewer plots can be 
-	# generated independently 
-	# (e.g without a currently running analysis, or if user goes drectly to runViewr tab)
-	
-	load(file = "/media/HD3/cprocess_tmp/31082015120830/norm.RData")
-	
-    finalAlignmentPlots <- reactive({
-        if (!is.null(norm)) {
+    # Final diagnostic plots - alignment
+    archiveFinalAlignmentPlots <- reactive({
+        norm <- runArchive$norm
+        if (!is.null(norm$pd)) {
             pd <- norm$pd
             for (i in 1:length(pd)) {
-                output$spectralTab <- renderPlot({
+                output[[paste("aFinalAlignment",i,sep="_")]] <- renderPlot({
                     plot.match(
                         pd[[i]]$rtref,
                         pd[[i]]$ref$mz[pd[[i]]$match.ref[[i]]$ref.idx],
@@ -65,27 +172,278 @@ runViewerTabPanelReactive <- function(input,output,session,
         }
     })
     
+    # Final diagnostic plots - deviation
+    archiveFinalDeviationPlots <- reactive({
+        norm <- runArchive$norm
+        if (!is.null(norm$pd)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("aFinalDeviation",i,sep="_")]] <- renderPlot({
+                    plot.rtdev(
+                        x=pd[[i]]$x,
+                        y=pd[[i]]$y,
+                        l=pd[[i]]$iset,
+                        exclude=pd[[i]]$badrt.ref,
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - boxplot
+    archiveFinalBoxplots <- reactive({
+        norm <- runArchive$norm
+        if (!is.null(norm$pd)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("aFinalBoxplot",i,sep="_")]] <- renderPlot({
+                    boxplot.mat(
+                        cbind(pd[[i]]$intref,pd[[i]]$intnew,pd[[i]]$intcor),
+                        name=c("Reference","Raw","Normalized"),
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - raw intensities
+    archiveFinalRawint <- reactive({
+        norm <- runArchive$norm
+        if (!is.null(norm$pd)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("aFinalRawint",i,sep="_")]] <- renderPlot({
+                    plot.rvn(
+                        pd[[i]]$a[,1],
+                        pd[[i]]$b[,1],
+                        pd[[i]]$aa,
+                        pd[[i]]$bb,
+                        lim=pd[[i]]$cutrat,
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - normalized intensities
+    archiveFinalNormint <- reactive({
+        norm <- runArchive$norm
+        if (!is.null(norm$pd)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("aFinalNormint",i,sep="_")]] <- renderPlot({
+                    plot.rvn(
+                        pd[[i]]$a[,2],
+                        pd[[i]]$b[,2],
+                        pd[[i]]$aa,
+                        pd[[i]]$bb,
+                        lim=pd[[i]]$cutrat,
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    # Final diagnostic plots - raw intensities
+    archiveFinalStdint <- reactive({
+        norm <- runArchive$norm
+        if (!is.null(norm)) {
+            pd <- norm$pd
+            for (i in 1:length(pd)) {
+                output[[paste("aFinalStdint",i,sep="_")]] <- renderPlot({
+                    plot.rvn(
+                        pd[[i]]$aa,
+                        pd[[i]]$bb,
+                        lim=pd[[i]]$cutrat,
+                        output="shiny"
+                    )
+                })
+            }
+        }
+    })
+    
+    handleExportResultsDownloadA <- reactive({
+        output$exportResultsA <- downloadHandler(
+            filename=function() {
+                tt <- paste(runArchive$runId,"_",
+                    format(Sys.time(),format="%Y%m%d%H%M%S"),".txt",sep="")
+            },
+            content=function(con) {
+                peaks <- runArchive$peaks
+                norm <- runArchive$norm$norm
+                exportType <- runArchive$normPeaks$export
+                
+                metaData <- tryCatch(attr(peaks,"meta.data"),
+                    error=function(e) { 
+                        return(NULL) 
+                },archiveFinally="")
+                
+                if (!is.list(peaks)) {
+                    p <- list()
+                    p[[1]] <- peaks
+                    if (is.null(metaData))
+                        names(p) <- "peakdata"
+                    else
+                        names(p) <- metaData$Samplename
+                    peaks <- p
+                }
+                
+                if (!is.null(metaData))
+                    expnames <- metaData$Replicate
+                else {
+                    if (!is.null(names(peaks)))
+                        expnames <- names(peaks)
+                    else
+                        expnames <- paste("Sample",1:length(peaks))
+                }
+                
+                normRef <- as.data.frame(norm$reference)
+                normMz <- as.data.frame(norm$mz)
+                normRt <- as.data.frame(norm$rt)
+                normInten <- as.data.frame(norm$norminten)
+                names(normMz) <- paste("mz - ",expnames)
+                names(normRt) <- paste("rt - ",expnames)
+                names(normInten) <- paste("Intensity - ",expnames)
+
+                if (exportType=="all") {
+                    archiveFinal <- cbind(normRef,normMz,normRt,normInten)
+                    write.table(archiveFinal,file=export,quote=FALSE,sep="\t",na="-",
+                        row.names=FALSE)
+                }
+                else if (exportType=="armada") {
+                    tmpNorm <- norm$norminten
+                    tmpNorm[which(tmpNorm==0)] <- "NaN"
+                    tmpNorm <- as.data.frame(tmpNorm)
+                    names(tmpNorm) <- paste("Intensity - ",expnames)
+                    archiveFinal <- cbind(normRef[,"id"],tmpNorm)
+                    nam <- names(archiveFinal)
+                    nam[1] <- "id"
+                    names(archiveFinal) <- nam
+                    write.table(archiveFinal,file=con,quote=FALSE,sep="\t",na="NaN",
+                        row.names=FALSE)
+                }
+            }
+        )
+    })
+    
     return(list(
-    	finalAlignmentPlots=finalAlignmentPlots
+        getCellClick=getCellClick,
+        archiveFinalAlignmentPlots=archiveFinalAlignmentPlots,
+        archiveFinalDeviationPlots=archiveFinalDeviationPlots,
+        archiveFinalBoxplots=archiveFinalBoxplots,
+        archiveFinalRawint=archiveFinalRawint,
+        archiveFinalNormint=archiveFinalNormint,
+        archiveFinalStdint=archiveFinalStdint,
+        handleExportResultsDownloadA=handleExportResultsDownloadA
     ))
 }
 
 runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
     allReactiveMsgs) {
-	
-	pipelineInput <- allReactiveVars$pipelineInput
-
-	output$spectralTab <- renderUI({
+    runArchive <- allReactiveVars$runArchive
+    
+    output$pastRunInfo = renderDT({
+        con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
+        cinnamonDB <- dbGetQuery(con,DB_QUERIES$RUN_INFO_ALL)
+        dbDisconnect(con)
+        names(cinnamonDB) <- c("Run ID","Project name","Date")
+        cinnamonDB$Date <- as.POSIXct(cinnamonDB$Date,
+            format="%Y-%m-%d %H:%M:%S")
+        datatable(cinnamonDB,
+            rownames=FALSE,
+            class="display",
+            filter="top",
+            escape=FALSE,
+            selection=list(
+                mode="single",
+                target = 'cell'
+            )
+        ) %>% formatStyle(1,cursor='alias') %>% 
+            formatDate(3,method='toLocaleString')
+    })
+    
+    # Results page
+    output$pastRunResults <- renderUI({
+        if (!is.null(runArchive$norm)) {
+            fluidRow(column(12,
+            
+            fluidRow(column(8,
+                wellPanel(
+                    fluidRow(column(12,
+                        h4("Summary"),
+                        hr(),
+                        div(
+                            style="font-size=1.3em",
+                            "Your analysis with project ID",
+                            tags$span(
+                                style="font-weight:600; color:#D70000",
+                                runArchive$runId
+                            ),
+                            "has been successfully completed! The results can ",
+                            "be reviewed in the tabs below. You can also ",
+                            "choose one of the following actions. Discard ",
+                            "analysis will get you to the new analysis page."
+                        ),
+                        fluidRow(br()),
+                        fluidRow(column(6,
+                            div(
+                                class="pull-left",
+                                downloadButton(
+                                    outputId="exportResultsA",
+                                    label="Download results",
+                                    class="btn-black"
+                                )
+                            )
+                        ))
+                    )),
+                    class="well-panel"
+                )
+            ),column(4,
+                wellPanel(
+                    fluidRow(column(12,
+                        h4("Reference dataset match stats"),
+                        hr(),
+                        div(
+                            style="font-size:1.1em; font-weight:600",
+                            runArchive$filenames[
+                                pipelineResults$currentIndex]," - ",
+                            runArchive$classes[pipelineResults$currentIndex]
+                        ),
+                        div(
+                            tags$strong(pipelineResults$norm$pct[
+                                pipelineResults$currentIndex,"total"]),
+                            "% of new m/z matching with reference"
+                        ),
+                        div(
+                            tags$strong(pipelineResults$norm$pct[
+                                pipelineResults$currentIndex,"is"]),
+                            "% of new sample IS matching with reference"
+                        ),
+                        div(
+                            tags$strong(pipelineResults$norm$pct[
+                                pipelineResults$currentIndex,"is_rt"]),
+                            "% of new sample IS used for RT correction"
+                        ),
+                        div(
+                            tags$strong(pipelineResults$norm$pct[
+                                pipelineResults$currentIndex,"is_inten"]),
+                            "% of new sample IS use for intensity normalization"
+                        )
+                    )),
+                    class="well-panel"
+                )
+            )),
             fluidRow(column(12,
                 wellPanel(
-                    h4("testt"),
+                    h4("Diagnostics"),
                     hr(),
                     do.call(tabsetPanel,c(
-                        id="runViewerDiagnosticPlots",
-                        
-                        #need to get the filenames without a currently running analysis
-                        
-                        lapply(1:length(pipelineInput$filenames),function(i,n) {
+                        id="analysisDiagnosticPlots",
+                        lapply(1:length(runArchive$filenames),function(i,n) {
                             tabPanel(
                                 h5(n[i]),
                                 fluidRow(br()),
@@ -100,45 +458,105 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
                                             tags$span(style="font-weight:600",
                                                 n[i])
                                         ),
-                                        plotOutput(spectralTab,height="1200px")
+                                        plotOutput(paste("finalAlignment",i,
+                                            sep="_"),height="1200px")
+                                    )),
+                                    class="well-panel"
+                                ),
+                                wellPanel(
+                                    fluidRow(column(12,
+                                        div(
+                                            style=paste(
+                                                "font-size: 1.1em;",
+                                                "margin-bottom:10px"
+                                            ),
+                                            "Retention time and intensity ",
+                                            "normalization for ",
+                                            tags$span(style="font-weight:600",
+                                                n[i])
+                                        )
+                                    )),
+                                    fluidRow(column(8,
+                                        plotOutput(paste("finalDeviation",i,
+                                            sep="_"),height="600px")
+                                    ),column(4,
+                                        plotOutput(paste("finalBoxplot",i,
+                                            sep="_"),height="600px")
+                                    )),
+                                    class="well-panel"
+                                ),
+                                wellPanel(
+                                    fluidRow(column(12,
+                                        div(
+                                            style=paste(
+                                                "font-size: 1.1em;",
+                                                "margin-bottom:10px"
+                                            ),
+                                            "Scatter and Mean-Difference ",
+                                            "plots for ",
+                                            tags$span(style="font-weight:600",
+                                                n[i])
+                                        ),
+                                        plotOutput(paste("finalRawint",i,
+                                            sep="_"),height="400px"),
+                                        fluidRow(br()),
+                                        plotOutput(paste("finalNormint",i,
+                                            sep="_"),height="400px"),
+                                        fluidRow(br()),
+                                        plotOutput(paste("finalStdint",i,
+                                            sep="_"),height="400px")
                                     )),
                                     class="well-panel"
                                 ),
                                 value=paste("diagTab",i,sep="_")
                             )
-                        	
-                        #need to get the filenames without a currently running analysis
-                        	
-                        },pipelineInput$filenames)
+                        },runArchive$filenames)
                     )),
                     class="well-panel"
                 )
             ))
-	})
+            
+            ))
+        }
+    })
 }
 
 runViewerTabPanelObserve <- function(input,output,session,
     allReactiveVars,allReactiveMsgs) {
-	
-	# Initialize observing reactive events
-	runViewerTabPanelReactiveEvents <- 
+    
+    # Initialize observing reactive events
+    runViewerTabPanelReactiveEvents <- 
         runViewerTabPanelEventReactive(input,output,session,
             allReactiveVars,allReactiveMsgs)
 
-		runArchivedAnalysisView <- runViewerTabPanelReactiveEvents$runArchivedAnalysisView
-		getDiagTab <- runViewerTabPanelReactiveEvents$getDiagTab
-		
-	# Initialize observing reactive expressions
+    loadSelectedRun <- runViewerTabPanelReactiveEvents$loadSelectedRun
+    getDiagTab <- runViewerTabPanelReactiveEvents$getDiagTab
+        
+    # Initialize observing reactive expressions
     runViewerTabPanelReactiveExprs <- 
         runViewerTabPanelReactive(input,output,session,allReactiveVars,
             allReactiveMsgs)
-	
-    finalAlignmentPlots <- runViewerTabPanelReactiveExprs$finalAlignmentPlots
-	
-    #DRAFT# user input observer
+    
+    getCellClick <- runViewerTabPanelReactiveExprs$getCellClick
+    archiveFinalAlignmentPlots <- 
+        runViewerTabPanelReactiveExprs$archiveFinalAlignmentPlots
+    archiveFinalDeviationPlots <- 
+        runViewerTabPanelReactiveExprs$archiveFinalDeviationPlots
+    archiveFinalBoxplots <- 
+        runViewerTabPanelReactiveExprs$archiveFinalBoxplots
+    archiveFinalRawint <- 
+        runViewerTabPanelReactiveExprs$archiveFinalRawint
+    archiveFinalNormint <- 
+        runViewerTabPanelReactiveExprs$archiveFinalNormint
+    archiveFinalStdint <- 
+        runViewerTabPanelReactiveExprs$archiveFinalStdint
+    handleExportResultsDownloadA <- 
+        runViewerTabPanelReactiveExprs$handleExportResultsDownloadA
+    
+    runViewerTabPanelRenderUI(output,session,allReactiveVars,allReactiveMsgs)
+    
     observe({
-    		shinyjs::enable("runArchivedAnalysisViewer")
-    		runArchivedAnalysisView()
+        loadSelectedRun()
     })
     
     observe({
@@ -146,6 +564,15 @@ runViewerTabPanelObserve <- function(input,output,session,
     })
     
     observe({
-        finalAlignmentPlots()
+        getCellClick()
+    })
+    
+    observe({
+        archiveFinalAlignmentPlots()
+        archiveFinalDeviationPlots()
+        archiveFinalBoxplots()
+        archiveFinalRawint()
+        archiveFinalNormint()
+        archiveFinalStdint()
     })
 }

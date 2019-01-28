@@ -6,7 +6,7 @@ initPackages <- function(session) {
     checkPackages(session)
     
     # Initial page loading indicator, until all content is loaded
-    ftProgress <- shiny::Progress$new(session,min=0,max=11)
+    ftProgress <- shiny::Progress$new(session,min=0,max=12)
     ftProgress$set(message="Starting:",value=0)
     on.exit(ftProgress$close())
     
@@ -42,6 +42,8 @@ initPackages <- function(session) {
     require(tools)
     updateFtProgress(value=11,detail="Loading yaml")
     require(yaml)
+    updateFtProgress(value=12,detail="Loading tools")
+    require(tools)
     # highcharter?
 }
 
@@ -62,7 +64,7 @@ checkPackages <- function(session) {
 
         pkgs <- c("RNetCDF","xcms","CAMERA","Rdisop","DT","ggplot2","RCurl",
             "tools","RSQLite","shiny","shinyjs","shinythemes","colourpicker",
-            "yaml","shinyWidgets")
+            "yaml","shinyWidgets","utils")
 
         # Bootstraping progress bar
         bsProgress <- shiny::Progress$new(session,min=0,max=length(pkgs))
