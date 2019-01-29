@@ -40,8 +40,9 @@ databaseManageTabPanelObserve <- function(input,output,session,
     info = input$runInfo_cell_clicked
     if (is.null(info$value) || info$col != 0) return(HTML('Click on a Run ID'))
     selectedID = info$value
-
-    runDetails<-dbGetQuery(con, paste0("SELECT ref_run_id,
+    
+    con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
+    runDetails<-dbGetQuery(con,paste0("SELECT ref_run_id,
                               xcms_filter_do,
                               xcms_filter_min,
                               xcms_filter_max,
@@ -71,6 +72,7 @@ databaseManageTabPanelObserve <- function(input,output,session,
 
                               FROM run_parameters 
                               WHERE ref_run_id = '", selectedID,"'"))
+    dbDisconnect(con)
     
     runDetails$xcms_filter_do <- gsub("1", "Yes", runDetails$xcms_filter_do)
     runDetails$xcms_filter_do <- gsub("0", "No", runDetails$xcms_filter_do)

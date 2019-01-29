@@ -586,19 +586,14 @@ analysisTabPanelEventReactive <- function(input,output,session,
             pipelineControl$analysisSaved <- TRUE
         },error=function(e) {
             message("Caught error: ",e)
-            # TODO: More things should happen here, like deleting what has been
-            # inserted, if anything. This is dependend on the paramWritten and
-            # infoWritten variables above
-          con <- dbConnect(SQLite(),dbname=APP_DB)
-          
-          
-          if (infoWritten == FALSE || paramWritten == FALSE) {
-              rs1Rm <- dbSendQuery(con,paramQueryRm)
+            message("Clearing potential leftovers")
+            con <- dbConnect(SQLite(),dbname=APP_DB)
+            if (!infoWritten || !paramWritten) {
+                rs1Rm <- dbSendQuery(con,paramQueryRm)
                 dbClearResult(rs1Rm)
                 rs2Rm <- dbSendQuery(con,infoQueryRm)
-          dbClearResult(rs2Rm)
-          }
-
+                dbClearResult(rs2Rm)
+            }
             dbDisconnect(con)
             pipelineControl$uiError <- TRUE
         },finally="")

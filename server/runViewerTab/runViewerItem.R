@@ -8,14 +8,15 @@ runViewerTabPanelEventReactive <- function(input,output,session,
         if (!is.null(runArchive$runId)) {
             # Check what exists in the run directory
             runPath <- file.path(pipelineInput$basePath,runArchive$runId)
-            peakFile <- file.path(runPath,"peak.RData")
+            runArchive$scriptPath <- file.path(runPath,"scripts")
+            peakFile <- file.path(runPath,"peaks.RData")
             normFile <- file.path(runPath,"norm.RData")
             tarFile <- file.path(runPath,paste(runArchive$runId,
                 ".tar.gz",sep=""))
             if (!dir.exists(runPath) && (!file.exists(peakFile)
                 || !file.exists(normFile)) && !file.exists(tarFile)) {
                 runArchive$corrupted <- TRUE
-                print("Corrupted!")
+                stop("Corrupted!")
                 return()
                 # Will throw a modal
             }
@@ -39,7 +40,9 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                     
                     # Retrieve parameteres from database
                     con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
-                    runInfo <- dbGetQuery(con,DB_QUERIES$NORM_INFO_PARAMS)
+                    runInfo <- dbGetQuery(con,
+                        paste(DB_QUERIES$NORM_INFO_PARAMS,"'",runArchive$runId,
+                            "'",sep=""))
                     dbDisconnect(con)
                     
                     runArchive$normPeaks$method <- 
@@ -59,19 +62,45 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                     runArchive$normPeaks$cutq <-
                         as.numeric(runInfo$norm_cutq)
                     runArchive$normPeaks$normalize <-
-                        as.character(runInfo$norm_correctfor)
+                        as.character(runInfo$norm_normalize)
                     runArchive$normPeaks$ispan <-
                         as.numeric(runInfo$norm_ispan)
                     runArchive$normPeaks$corrfacNS <-
                         as.numeric(runInfo$norm_cutrat)
+                    
+                    # Parse refined times
+                    if (!is.null(runInfo$norm_times)
+                        && runInfo$norm_times != "") {
+                        v <- strsplit(as.character(runInfo$norm_times),"),c")
+                        if (length(v[[1]]) > 1) {
+                            # v[[1]][1] does not have a ")" in the end
+                            v[[1]][1] <- paste(v[[1]][1],")",sep="")
+
+                            # The rest up to the last don't have a "c" in the 
+                            # beginning and a ")" in the end
+                            if (length(v[[1]]) > 2) {
+                                for (i in 2:(length(v[[1]])-1))
+                                    v[[1]][i] <- paste("c",v[[1]][i],")",sep="")
+                            }
+                                
+                            # The last does not have a "c" in the beginning
+                            v[[1]][length(v[[1]])] <- 
+                                paste("c",v[[1]][length(v[[1]])],sep="")
+                        }
+                        
+                        runArchive$normPeaks$refinedTimeBoundaries <- 
+                            lapply(v[[1]],function(x) eval(parse(text=x)))
+                    }
                     
                     # Show progress stuff
                     shinyjs::show("progressWrapperA")
                     shinyjs::html("normalizationProgressA",
                         "Normalization running!")
                     
-                    sink(normLog)
-                    sink(normLog,type="message")
+                    #print(as.list(runArchive))
+                    
+                    #sink(normLog)
+                    #sink(normLog,type="message")
                     
                     norm <- normalizeSamples(
                         peaks=peaks,
@@ -87,7 +116,7 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                         cutq=runArchive$normPeaks$cutq,
                         corrfac=runArchive$normPeaks$corrfac,
                         cutrat=runArchive$normPeaks$input$corrfacNS,
-                        export=file.path(runArchive$runPath,"norm_output.txt"),
+                        export=file.path(runPath,"norm_output.txt"),
                         diagplot=runPath,
                         plottype="png",
                         export.type=as.character(runArchive$normPeaks$export),
@@ -99,29 +128,28 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                         )
                     )
                     
-                    sink(type="message")
-                    sink()
+                    #sink(type="message")
+                    #sink()
                     
-                    runArchive$normRda <- file.path(runArchive$runPath,
-                        "norm.RData")
+                    runArchive$normRda <- file.path(runPath,"norm.RData")
                     save(norm,file=runArchive$normRda)
                 }
+                
+                # Final assignments
+                meta <- attr(peaks,"meta.data")
+                runArchive$peaks <- peaks
+                runArchive$norm <- norm
+                runArchive$filenames <- meta$Filename
+                runArchive$classes <- meta$Class
+                runArchive$currentIndex <- 1
             }
-            
-            # Final assignments
-            meta <- attr(peaks,"meta.data")
-            runArchive$peaks <- peaks
-            runArchive$norm <- norm
-            runArchive$filenames <- meta$Filename
-            runArchive$classes <- meta$Class
-            runArchive$currentIndex <- 1
         }
     })
     
     getDiagTab <- eventReactive(input$runViewerDiagnosticPlots,{
         val <- isolate(input$runViewerDiagnosticPlots)
         if (!is.null(val))
-            pipelineResults$currentIndex <- 
+            runArchive$currentIndex <- 
                 as.numeric(strsplit(val,"_")[[1]][2])
     })
     
@@ -311,8 +339,8 @@ runViewerTabPanelReactive <- function(input,output,session,
 
                 if (exportType=="all") {
                     archiveFinal <- cbind(normRef,normMz,normRt,normInten)
-                    write.table(archiveFinal,file=export,quote=FALSE,sep="\t",na="-",
-                        row.names=FALSE)
+                    write.table(archiveFinal,file=con,quote=FALSE,sep="\t",
+                        na="-",row.names=FALSE)
                 }
                 else if (exportType=="armada") {
                     tmpNorm <- norm$norminten
@@ -323,8 +351,8 @@ runViewerTabPanelReactive <- function(input,output,session,
                     nam <- names(archiveFinal)
                     nam[1] <- "id"
                     names(archiveFinal) <- nam
-                    write.table(archiveFinal,file=con,quote=FALSE,sep="\t",na="NaN",
-                        row.names=FALSE)
+                    write.table(archiveFinal,file=con,quote=FALSE,sep="\t",
+                        na="NaN",row.names=FALSE)
                 }
             }
         )
@@ -410,27 +438,27 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
                         div(
                             style="font-size:1.1em; font-weight:600",
                             runArchive$filenames[
-                                pipelineResults$currentIndex]," - ",
-                            runArchive$classes[pipelineResults$currentIndex]
+                                runArchive$currentIndex]," - ",
+                            runArchive$classes[runArchive$currentIndex]
                         ),
                         div(
-                            tags$strong(pipelineResults$norm$pct[
-                                pipelineResults$currentIndex,"total"]),
+                            tags$strong(runArchive$norm$pct[
+                                runArchive$currentIndex,"total"]),
                             "% of new m/z matching with reference"
                         ),
                         div(
-                            tags$strong(pipelineResults$norm$pct[
-                                pipelineResults$currentIndex,"is"]),
+                            tags$strong(runArchive$norm$pct[
+                                runArchive$currentIndex,"is"]),
                             "% of new sample IS matching with reference"
                         ),
                         div(
-                            tags$strong(pipelineResults$norm$pct[
-                                pipelineResults$currentIndex,"is_rt"]),
+                            tags$strong(runArchive$norm$pct[
+                                runArchive$currentIndex,"is_rt"]),
                             "% of new sample IS used for RT correction"
                         ),
                         div(
-                            tags$strong(pipelineResults$norm$pct[
-                                pipelineResults$currentIndex,"is_inten"]),
+                            tags$strong(runArchive$norm$pct[
+                                runArchive$currentIndex,"is_inten"]),
                             "% of new sample IS use for intensity normalization"
                         )
                     )),
@@ -458,7 +486,7 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
                                             tags$span(style="font-weight:600",
                                                 n[i])
                                         ),
-                                        plotOutput(paste("finalAlignment",i,
+                                        plotOutput(paste("aFinalAlignment",i,
                                             sep="_"),height="1200px")
                                     )),
                                     class="well-panel"
@@ -477,10 +505,10 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
                                         )
                                     )),
                                     fluidRow(column(8,
-                                        plotOutput(paste("finalDeviation",i,
+                                        plotOutput(paste("aFinalDeviation",i,
                                             sep="_"),height="600px")
                                     ),column(4,
-                                        plotOutput(paste("finalBoxplot",i,
+                                        plotOutput(paste("aFinalBoxplot",i,
                                             sep="_"),height="600px")
                                     )),
                                     class="well-panel"
@@ -497,18 +525,18 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
                                             tags$span(style="font-weight:600",
                                                 n[i])
                                         ),
-                                        plotOutput(paste("finalRawint",i,
+                                        plotOutput(paste("aFinalRawint",i,
                                             sep="_"),height="400px"),
                                         fluidRow(br()),
-                                        plotOutput(paste("finalNormint",i,
+                                        plotOutput(paste("aFinalNormint",i,
                                             sep="_"),height="400px"),
                                         fluidRow(br()),
-                                        plotOutput(paste("finalStdint",i,
+                                        plotOutput(paste("aFinalStdint",i,
                                             sep="_"),height="400px")
                                     )),
                                     class="well-panel"
                                 ),
-                                value=paste("diagTab",i,sep="_")
+                                value=paste("diagTabA",i,sep="_")
                             )
                         },runArchive$filenames)
                     )),
@@ -565,6 +593,10 @@ runViewerTabPanelObserve <- function(input,output,session,
     
     observe({
         getCellClick()
+    })
+    
+    observe({
+        handleExportResultsDownloadA()
     })
     
     observe({
