@@ -59,7 +59,7 @@ shinyUI(fluidPage(
             tabPanel("Browse reference",icon=icon("eye"),
                 databaseBrowseTabPanel()
             ),
-            tabPanel("Browse metadata",icon=icon("cog"),
+            tabPanel("Manage runs",icon=icon("cog"),
                 databaseManageTabPanel()
             ),
             #tabPanel("Modify",icon=icon("pencil"),

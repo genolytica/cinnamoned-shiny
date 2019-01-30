@@ -1,31 +1,36 @@
 databaseSearchTabPanelEventReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
 }
 
 databaseSearchTabPanelReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
-	
-	filter <- reactive({input$metaboliteFilters})
-	
-	metaboHmdbidFilter <- reactive({
-		if (input$metaboliteFilters=='hmdbID') {
-			filter=input$metaboFiltersHmdbID
-		}
-	})
-	
-	validateMZRangeFrom <- reactive({
-        mzrangefrom <- as.numeric(input$lowerLimit)
-        if (mzrangefrom < 0 || is.na(mzrangefrom)) {
-            return(FALSE)
-        }
-        else {
-            return(TRUE)
+    allReactiveVars) {
+    updateMetaboIds <- reactive({
+        m <- isolate({input$metaboDbId})
+        con <- dbConnect(drv=RSQLite::SQLite(),dbname=METABO_DB)
+        metabs <- dbGetQuery(con,paste(DB_QUERIES$AUTO_METAB_1,' \'%',
+            m,'%\' ',DB_QUERIES$AUTO_METAB_2,sep=""))
+        dbDisconnect(con)
+        if (nrow(metabs) > 0) {
+            updateSelectizeInput(session,"metaboDbId",
+                choices=as.character(metabs[,1]),
+                selected=m,
+                server=TRUE
+            )
         }
     })
-	
-    validateMZRangeTo <- reactive({
-        mzrangeto <- as.numeric(input$upperLimit)
-        if (mzrangeto < 0 || is.na(mzrangeto)) {
+    
+    checkComplyButton <- reactive({
+        if (input$metaboliteFilters=='dbId') {
+            if (!is.null(input$metaboDbId) && input$metaboDbId != "")
+                shinyjs::enable("fetchMetabolites")
+            else
+                shinyjs::disable("fetchMetabolites")
+        }
+    })
+    
+    validateMzRangeFrom <- reactive({
+        mzRangeFrom <- as.numeric(input$lowerLimit)
+        if (mzRangeFrom < 0 || is.na(mzRangeFrom)) {
             return(FALSE)
         }
         else {
@@ -33,70 +38,106 @@ databaseSearchTabPanelReactive <- function(input,output,session,
         }
     })
     
-    validateHMDBid <- reactive({
-        hmdbid <- input$metaboFiltersHmdbID
-        if (hmdbid == "") {
+    validateMzRangeTo <- reactive({
+        mzRangeTo <- as.numeric(input$upperLimit)
+        if (mzRangeTo < 0 || is.na(mzRangeTo)) {
             return(FALSE)
         }
         else {
             return(TRUE)
         }
     })
+    
+    validateDbId <- reactive({
+        id <- input$metaboFiltersDbID
+        if (id == "") {
+            return(FALSE)
+        }
+        else {
+            return(TRUE)
+        }
+    })
+    
     return(list(
-        validateMZRangeFrom=validateMZRangeFrom,
-        validateMZRangeTo=validateMZRangeTo,
-        validateHMDBid=validateHMDBid,
-        filter=filter
+        validateMzRangeFrom=validateMzRangeFrom,
+        validateMzRangeTo=validateMzRangeTo,
+        validateDbId=validateDbId,
+        updateMetaboIds=updateMetaboIds,
+        checkComplyButton=checkComplyButton
     ))
 }
 
-databaseSearchTabPanelRenderUI <- function(output,session,allReactiveVars,
-    allReactiveMsgs) {
+databaseSearchTabPanelRenderUI <- function(output,session,allReactiveVars) {
+    output$metaboSummary = renderDT({
+        canFetch <- FALSE
+        if (input$metaboliteFilters=='dbId') {
+            if (!is.null(input$metaboDbId) && input$metaboDbId != "") {
+                m <- input$metaboDbId
+                mq <- paste(paste("'",m,"'",sep=""),collapse=",")
+                query <- paste(DB_QUERIES$METAB_BY_ID_1," (",mq," ) ",
+                    DB_QUERIES$METAB_BY_ID_2,sep="")
+                canFetch <- TRUE
+            }
+        }
+        else if (input$metaboliteFilters=='mzRange') {
+            mzMin <- as.numeric(input$lowerLimit)
+            mzMax <- as.numeric(input$upperLimit)
+            if (!is.na(mzMin) && !is.na(mzMax) && mzMin > 0 && mzMax > 0) {
+                query <- paste(DB_QUERIES$METAB_BY_RANGE_1,mzMin,
+                    DB_QUERIES$METAB_BY_RANGE_2,mzMax,
+                    DB_QUERIES$METAB_BY_RANGE_3)
+                canFetch <- TRUE
+            }
+        }
+        
+        if (canFetch) {
+            con <- dbConnect(drv=RSQLite::SQLite(),dbname=METABO_DB)
+            metaboTable <- dbGetQuery(con,query)
+            dbDisconnect(con)
+            
+            datatable(metaboTable,
+                rownames=FALSE,
+                class="display",
+                filter="none",
+                escape=FALSE,
+                selection=list(
+                    mode="single",
+                    target = 'cell'
+                )
+            ) %>% formatStyle(1,cursor='alias')
+        }        
+    })
 }
 
 databaseSearchTabPanelObserve <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
-  metaboFilter <- allReactiveVars$metaboFilter
-  
-  # Initialize observing reactive expressions
-  databaseSearchTabPanelReactiveExprs <- 
-  	databaseSearchTabPanelReactive(input,output,session,allReactiveVars,
-    	allReactiveMsgs)
+    allReactiveVars) {
         
-    validateMZRangeFrom <- 
-        databaseSearchTabPanelReactiveExprs$validateMZRangeFrom
-    validateMZRangeTo <- 
-        databaseSearchTabPanelReactiveExprs$validateMZRangeTo
+  databaseSearchTabPanelReactiveExprs <- 
+    databaseSearchTabPanelReactive(input,output,session,allReactiveVars)
+        
+    validateMzRangeFrom <- 
+        databaseSearchTabPanelReactiveExprs$validateMzRangeFrom
+    validateMzRangeTo <- 
+        databaseSearchTabPanelReactiveExprs$validateMzRangeTo
     validateHMDBid <- 
-        databaseSearchTabPanelReactiveExprs$validateHMDBid
-    filter <- 
-        databaseSearchTabPanelReactiveExprs$filter
-
-   # Set the observers
-   # Validators
-  	observe({
-    	if (validateHMDBid())
-      		shinyjs::enable("calculateMetaboFilter")
-    	else
-    		shinyjs::disable("calculateMetaboFilter")
-  		output$filter <- renderText(
-  		if (filter() == 'hmdbID'){
-  			#Metabolite ID QUERY HERE 
-  			return(input$metaboFiltersHmdbID)
-  		}
-  	)
-  	})
+        databaseSearchTabPanelReactiveExprs$validateDbId
+    updateMetaboIds <- databaseSearchTabPanelReactiveExprs$updateMetaboIds
+    checkComplyButton <- 
+        databaseSearchTabPanelReactiveExprs$checkComplyButton
+        
+    databaseSearchTabPanelRenderUI(output,session,allReactiveVars)
+    
+    observe({
+        updateMetaboIds()
+    })
+    observe({
+        checkComplyButton()
+    })
  
-  	observe({
-    	if (validateMZRangeTo() && validateMZRangeFrom())
-      		shinyjs::enable("calculateMetaboFilter")
-    	else
-    		shinyjs::disable("calculateMetaboFilter")
-  		  	 output$filter <- renderText(
-  		if (filter() == 'mzRange'){
-  			#m/z range QUERY HERE
-  			return(paste(input$lowerLimit, input$upperLimit))
-  		}
-  	)
-  	})
+    observe({
+        if (validateMzRangeTo() && validateMzRangeFrom())
+            shinyjs::enable("fetchMetabolites")
+        else
+            shinyjs::disable("fetchMetabolites")
+    })
 }

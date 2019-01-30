@@ -1,5 +1,5 @@
 analysisTabPanelEventReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
     # Retrieve control ractive variables
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
@@ -598,6 +598,10 @@ analysisTabPanelEventReactive <- function(input,output,session,
             pipelineControl$uiError <- TRUE
         },finally="")
         
+        # Delete data directory
+        message("Deleting CDF file data directory ",pipelineInput$dataPath)
+        unlink(pipelineInput$dataPath,recursive=TRUE)
+        
         sink(type="message")
         sink()
     })
@@ -629,7 +633,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
 }
 
 analysisTabPanelReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
     pipelineResults <- allReactiveVars$pipelineResults
@@ -924,6 +928,18 @@ analysisTabPanelReactive <- function(input,output,session,
         }
     })
     
+    # Uploaded files
+    uploadSampleFile <- reactive({
+        if (!is.null(input$sampleInfoFile)) {
+            meta <- read.delim(input$sampleInfoFile$datapath)
+            pipelineInput$filenames <- as.character(meta[,1])
+            pipelineInput$classes <- as.character(meta[,2])
+            shinyjs::hide("sampleClassInfoWrapper")
+        }
+        else
+            shinyjs::show("sampleClassInfoWrapper")
+    })
+    
     # Sample classes
     classNames <- reactive({
         if (pipelineControl$step=="preprocess") {
@@ -1206,6 +1222,7 @@ analysisTabPanelReactive <- function(input,output,session,
         validateXcmsFWHM=validateXcmsFWHM,
         validateXcmsSigma=validateXcmsSigma,
         uploadFiles=uploadFiles,
+        uploadSampleFile=uploadSampleFile,
         validateXcmsEIBPCSteps=validateXcmsEIBPCSteps,
         validateXcmsEIBPCMaxPeaks=validateXcmsEIBPCMaxPeaks,
         classNames=classNames,
@@ -1231,8 +1248,7 @@ analysisTabPanelReactive <- function(input,output,session,
     ))
 }
 
-analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
-    allReactiveMsgs) {
+analysisTabPanelRenderUI <- function(output,session,allReactiveVars) {
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
     pipelineResults <- allReactiveVars$pipelineResults
@@ -1513,8 +1529,7 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars,
     })
 }
 
-analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
-    allReactiveMsgs) {
+analysisTabPanelObserve <- function(input,output,session,allReactiveVars) {
     pipelineControl <- allReactiveVars$pipelineControl
     pipelineInput <- allReactiveVars$pipelineInput
     pipelineResults <- allReactiveVars$pipelineResults
@@ -1522,7 +1537,7 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
     # Initialize observing reactive events
     analysisTabPanelReactiveEvents <- 
         analysisTabPanelEventReactive(input,output,session,
-            allReactiveVars,allReactiveMsgs)
+            allReactiveVars)
     
     runPreprocess <- analysisTabPanelReactiveEvents$runPreprocess
     resetPreprocess <- analysisTabPanelReactiveEvents$resetPreprocess
@@ -1538,8 +1553,7 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
 
     # Initialize observing reactive expressions
     analysisTabPanelReactiveExprs <- 
-        analysisTabPanelReactive(input,output,session,allReactiveVars,
-            allReactiveMsgs)
+        analysisTabPanelReactive(input,output,session,allReactiveVars)
     
     # Preprocessing validators    
     validateProjectName <- 
@@ -1591,6 +1605,7 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
 
 
     uploadFiles <- analysisTabPanelReactiveExprs$uploadFiles
+    uploadSampleFile <- analysisTabPanelReactiveExprs$uploadSampleFile
     classNames <- analysisTabPanelReactiveExprs$classNames
     spectralReviewPlots <- analysisTabPanelReactiveExprs$spectralReviewPlots
     doTimeFilterReview <- analysisTabPanelReactiveExprs$doTimeFilterReview
@@ -1604,7 +1619,7 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars,
         analysisTabPanelReactiveExprs$handleExportResultsDownload
     
     # Initialize UI element reactivity  
-    analysisTabPanelRenderUI(output,session,allReactiveVars,allReactiveMsgs)
+    analysisTabPanelRenderUI(output,session,allReactiveVars)
     
     # Set the observers
     # Validators

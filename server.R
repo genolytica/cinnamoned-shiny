@@ -24,25 +24,17 @@ shinyServer(
         
         # Initialize all the reactive variables used...
         allReactiveVars <- initReactiveVars()
-        # ...and reactive messages
-        allReactiveMsgs <- initReactiveMsgs()
         
         # Analysis
-        analysisTabPanelObserve(input,output,session,allReactiveVars,
-            allReactiveMsgs)
+        analysisTabPanelObserve(input,output,session,allReactiveVars)
             
         # Run Viewer
-        runViewerTabPanelObserve(input,output,session,allReactiveVars,
-            allReactiveMsgs)
+        runViewerTabPanelObserve(input,output,session,allReactiveVars)
         
         # Database
-        databaseBrowseTabPanelObserve(input,output,session,allReactiveVars,
-            allReactiveMsgs)
-        databaseManageTabPanelObserve(input,output,session,allReactiveVars,
-            allReactiveMsgs)
-        #databaseModifyTabPanelObserve(input,output,session,allReactiveVars,
-        #    allReactiveMsgs)
-        databaseSearchTabPanelObserve(input,output,session,allReactiveVars,
-            allReactiveMsgs)                
+        databaseBrowseTabPanelObserve(input,output,session,allReactiveVars)
+        databaseManageTabPanelObserve(input,output,session,allReactiveVars)
+        #databaseModifyTabPanelObserve(input,output,session,allReactiveVars)
+        databaseSearchTabPanelObserve(input,output,session,allReactiveVars)
     }
 )

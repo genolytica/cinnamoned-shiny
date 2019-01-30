@@ -1,15 +1,14 @@
 databaseModifyTabPanelEventReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
 }
 
 databaseModifyTabPanelReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
 }
 
-databaseModifyTabPanelRenderUI <- function(output,session,allReactiveVars,
-    allReactiveMsgs) {
+databaseModifyTabPanelRenderUI <- function(output,session,allReactiveVars) {
 }
 
 databaseModifyTabPanelObserve <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
 }

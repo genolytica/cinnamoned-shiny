@@ -1,5 +1,5 @@
 runViewerTabPanelEventReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
     
     pipelineInput <- allReactiveVars$pipelineInput
     runArchive <- allReactiveVars$runArchive
@@ -16,9 +16,17 @@ runViewerTabPanelEventReactive <- function(input,output,session,
             if (!dir.exists(runPath) && (!file.exists(peakFile)
                 || !file.exists(normFile)) && !file.exists(tarFile)) {
                 runArchive$corrupted <- TRUE
-                stop("Corrupted!")
+                showModal(modalDialog(
+                    title="Corrupted run!",
+                    "Run ",tags$strong(runArchive$runId)," is probably ",
+                    "corrupted! Please report the run ID to the administrator ",
+                    "so as to investigate.",
+                    easyClose=FALSE,
+                    footer=tagList(
+                        modalButton("OK",icon=icon("check"))
+                    )
+                ))
                 return()
-                # Will throw a modal
             }
             
             # 1. Compressed case, old version definitely, uncompress and 
@@ -92,15 +100,20 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                             lapply(v[[1]],function(x) eval(parse(text=x)))
                     }
                     
+                    # Create the normalization figure output directory if it
+                    # does not exist
+                    figDir <- file.path(runPath,"diagnostic","normalization")
+                    if (!dir.exists(figDir))
+                        dir.create(figDir,recursive=TRUE,mode="0755")
+                    pipelineInput$diagPathNormalization
+                    
                     # Show progress stuff
                     shinyjs::show("progressWrapperA")
                     shinyjs::html("normalizationProgressA",
                         "Normalization running!")
                     
-                    #print(as.list(runArchive))
-                    
-                    #sink(normLog)
-                    #sink(normLog,type="message")
+                    sink(normLog)
+                    sink(normLog,type="message")
                     
                     norm <- normalizeSamples(
                         peaks=peaks,
@@ -117,7 +130,7 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                         corrfac=runArchive$normPeaks$corrfac,
                         cutrat=runArchive$normPeaks$input$corrfacNS,
                         export=file.path(runPath,"norm_output.txt"),
-                        diagplot=runPath,
+                        diagplot=figDir,
                         plottype="png",
                         export.type=as.character(runArchive$normPeaks$export),
                         shinyProgressData=list(
@@ -128,8 +141,8 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                         )
                     )
                     
-                    #sink(type="message")
-                    #sink()
+                    sink(type="message")
+                    sink()
                     
                     runArchive$normRda <- file.path(runPath,"norm.RData")
                     save(norm,file=runArchive$normRda)
@@ -162,7 +175,7 @@ runViewerTabPanelEventReactive <- function(input,output,session,
 }
 
 runViewerTabPanelReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
     
     runArchive <- allReactiveVars$runArchive
     
@@ -370,8 +383,7 @@ runViewerTabPanelReactive <- function(input,output,session,
     ))
 }
 
-runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
-    allReactiveMsgs) {
+runViewerTabPanelRenderUI <- function(output,session,allReactiveVars) {
     runArchive <- allReactiveVars$runArchive
     
     output$pastRunInfo = renderDT({
@@ -549,21 +561,17 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars,
     })
 }
 
-runViewerTabPanelObserve <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
-    
+runViewerTabPanelObserve <- function(input,output,session,allReactiveVars) {
     # Initialize observing reactive events
     runViewerTabPanelReactiveEvents <- 
-        runViewerTabPanelEventReactive(input,output,session,
-            allReactiveVars,allReactiveMsgs)
+        runViewerTabPanelEventReactive(input,output,session,allReactiveVars)
 
     loadSelectedRun <- runViewerTabPanelReactiveEvents$loadSelectedRun
     getDiagTab <- runViewerTabPanelReactiveEvents$getDiagTab
         
     # Initialize observing reactive expressions
     runViewerTabPanelReactiveExprs <- 
-        runViewerTabPanelReactive(input,output,session,allReactiveVars,
-            allReactiveMsgs)
+        runViewerTabPanelReactive(input,output,session,allReactiveVars)
     
     getCellClick <- runViewerTabPanelReactiveExprs$getCellClick
     archiveFinalAlignmentPlots <- 
@@ -581,7 +589,7 @@ runViewerTabPanelObserve <- function(input,output,session,
     handleExportResultsDownloadA <- 
         runViewerTabPanelReactiveExprs$handleExportResultsDownloadA
     
-    runViewerTabPanelRenderUI(output,session,allReactiveVars,allReactiveMsgs)
+    runViewerTabPanelRenderUI(output,session,allReactiveVars)
     
     observe({
         loadSelectedRun()

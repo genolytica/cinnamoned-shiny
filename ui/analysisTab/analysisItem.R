@@ -100,39 +100,42 @@ analysisTabPanelPreprocess <- function() {
                         accept=c("text/*")
                     )
                 )),
-                fluidRow(column(12,
-                    div(
-                        style="font-weight:bold; font-size:1.1em",
-                        "OR"
-                    )
-                )),
-                fluidRow(column(12,
-                    p(
-                        
-                        paste("Manually enter sample-class information ",
-                            "(after file upload)",sep="")
-                    )
-                )),
-                fluidRow(column(6,
-                    div(
-                        style=paste("font-weight:bold;",
-                            "border-style: none none dashed none;",
-                            "border-width: 2px;"),
-                        "Filename"
-                    )
-                ),column(6,
-                    div(
-                        style=paste("font-weight:bold;",
-                            "border-style: none none dashed none;",
-                            "border-width: 2px;"),
-                        "Class"
-                    )
-                )),
-                fluidRow(column(12,
-                    div(class="small",
-                        htmlOutput("sampleInfoEdit")
-                    )
-                )),
+                div(
+                    id="sampleClassInfoWrapper",
+                    fluidRow(column(12,
+                        div(
+                            style="font-weight:bold; font-size:1.1em",
+                            "OR"
+                        )
+                    )),
+                    fluidRow(column(12,
+                        p(
+                            
+                            paste("Manually enter sample-class information ",
+                                "(after file upload)",sep="")
+                        )
+                    )),
+                    fluidRow(column(6,
+                        div(
+                            style=paste("font-weight:bold;",
+                                "border-style: none none dashed none;",
+                                "border-width: 2px;"),
+                            "Filename"
+                        )
+                    ),column(6,
+                        div(
+                            style=paste("font-weight:bold;",
+                                "border-style: none none dashed none;",
+                                "border-width: 2px;"),
+                            "Class"
+                        )
+                    )),
+                    fluidRow(column(12,
+                        div(class="small",
+                            htmlOutput("sampleInfoEdit")
+                        )
+                    ))
+                ),
                 class="well-panel"
             )
         ))

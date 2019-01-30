@@ -9,8 +9,8 @@ runViewerTabPanel <- function() {
                 fluidRow(column(12,
                     disabled(actionButton(
                         inputId="loadSelectedRun",
-                        label="Load selected",
-                        icon=icon("truck"),
+                        label="Load selected and comply!",
+                        icon=icon("hand-spock-o"),
                         class="btn-primary pull-right"
                     ))
                 )),

@@ -108,8 +108,14 @@ DB_QUERIES <- list(
         '`norm_correctfor`, `norm_export`, `norm_diagplot`, `norm_tspan`,',
         '`norm_tit`, `norm_corrfac`, `norm_cutq`, `norm_normalize`,',
         '`norm_ispan`, `norm_cutrat`, `norm_times` FROM `run_parameters`',
-        'WHERE `ref_run_id`=')
+        'WHERE `ref_run_id`='),
+    METAB_ALL_ID=paste('SELECT `id` FROM `peak_info` ORDER BY `id`')
 )
+
+# All metabolite ids
+con <- dbConnect(drv=RSQLite::SQLite(),dbname=METABO_DB)
+METABIDS <- dbGetQuery(con,DB_QUERIES$METAB_ALL_ID)
+dbDisconnect(con)
 
 # Maximum filesize
 options(shiny.maxRequestSize=10*1024^3)

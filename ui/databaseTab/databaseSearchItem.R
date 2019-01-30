@@ -4,24 +4,24 @@ databaseSearchTabPanel <- function() {
             wellPanel(
                 h2("Search Metabolite"),
                 hr(),
-                h4("Filter metabolite by"),
+                h4("Search metabolites by"),
                 radioButtons(
                     inputId="metaboliteFilters",
                     label="",
                     inline=TRUE,
                     choices=list(
                         "m/z range"="mzRange",
-                        "Database ID"="hmdbID"
+                        "Database ID"="dbId"
                     )
                 ),
                 conditionalPanel(
-                    condition="input.metaboliteFilters=='hmdbID'",
+                    condition="input.metaboliteFilters=='dbId'",
                     fluidRow(column(12,
-                        textInput(
-                            inputId="metaboFiltersHmdbID",
+                        selectizeInput(
+                            inputId="metaboDbId",
                             label="",
-                            value="",
-                            placeholder="Please type an HMDB ID"
+                            choices=NULL,
+                            multiple=TRUE
                         )
                     ))
                 ),
@@ -29,26 +29,41 @@ databaseSearchTabPanel <- function() {
                     condition = "input.metaboliteFilters=='mzRange'",
                     fluidRow(column(6,
                         textInput(
-                            inputId = "lowerLimit",
-                            label = "From:",
-                            value = ""
+                            inputId="lowerLimit",
+                            label="From",
+                            value=""
                         )
                     ),column(6,
                         textInput(
-                            inputId = "upperLimit",
-                            label = "To:",
-                            value = ""
+                            inputId="upperLimit",
+                            label="To",
+                            value=""
                         )
                     ))
                 ),
-                fluidRow(column(12,
-                    actionButton(
-                        inputId="calculateMetaboFilter",
-                        label="Go!",
-                        icon=icon("rocket"),
-                        class="btn-primary pull-right"
-                    )
-                )),
+                #fluidRow(column(12,
+                #    actionButton(
+                #        inputId="fetchMetabolites",
+                #        label="Comply!",
+                #        icon=icon("hand-spock-o"),
+                #        class="btn-primary pull-right"
+                #    )
+                #)),
+                class="well-panel"
+            )
+        ),column(8,
+            wellPanel(
+                h2("Metabolite summary table"),
+                hr(),
+                DTOutput("metaboSummary"),
+                class="well-panel"
+            )
+        )),
+        fluidRow(column(12,
+            wellPanel(
+                h2("Metabolite details"),
+                hr(),
+                htmlOutput("metaboliteDetails"),
                 class="well-panel"
             )
         ))

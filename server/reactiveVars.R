@@ -16,8 +16,8 @@ initReactiveVars <- function() {
     
     reactiveVars$pipelineInput <- reactiveValues(
         currentRunId=NULL,
-        #basePath="/media/HD3/cprocess_tmp",
-        basePath="/media/HD3/cprocess",
+        basePath="/media/HD3/cprocess_tmp",
+        #basePath="/media/HD3/cprocess",
         runPath=NULL,
         dataPath=NULL,
         dataPathRaw=NULL,
@@ -316,23 +316,6 @@ initReactiveVars <- function() {
     }
     
     return(reactiveVars)
-}
-
-initReactiveMsgs <- function() {
-    analysisMessages <- reactiveValues(
-        messages=list(
-            list(
-                type="INFO",
-                msg=paste(getTime("INFO"),"Welcome to the analysis panel of ",
-                    "cinnamoned! This is an info message. Make your ",
-                    "selections on the left.")
-            )
-        )
-    )
-    
-    return(list(
-        analysisMessages=analysisMessages
-    ))
 }
 
 ggmessage <- function(msg="",type=c("generic","info","success","warning",

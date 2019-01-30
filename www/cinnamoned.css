@@ -178,6 +178,14 @@ input[type="color"]:focus,
     color: #FFB46C;
 }
 
+.wordwrap { 
+   white-space: pre-wrap;      /* CSS3 */   
+   white-space: -moz-pre-wrap; /* Firefox */    
+   white-space: -pre-wrap;     /* Opera <7 */   
+   white-space: -o-pre-wrap;   /* Opera 7 */    
+   word-wrap: break-word;      /* IE */
+}
+
 /* Override tab classes */
 .nav-tabs {
     border-bottom: 1px solid #A33307;
@@ -237,4 +245,27 @@ input[type="color"]:focus,
     box-shadow: inset 0 0 3px rgba(51,51,51,.45);
     -webkit-transition: background 450ms;
     transition: background 450ms;
+}
+
+/* Override some selectize properties */
+.selectize-control.multi .selectize-input > div {
+    cursor: pointer;
+    margin: 0 3px 3px 0;
+    padding: 1px 3px;
+    background: #FBD099;
+    color: #333333;
+    border: 0 solid rgba(0, 0, 0, 0);
+}
+
+.selectize-control.multi .selectize-input > div.active {
+    background: #E95420;
+    color: #ffffff;
+    border: 0 solid rgba(0, 0, 0, 0);
+}
+
+.selectize-input.focus {
+  border-color: rgba(163,51,7,0.8);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.075) inset, 0 0 8px rgba(163,51,7,0.6);
+  outline: 0;
+  -webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.075) inset, 0 0 8px rgba(163,51,7,0.6);
 }

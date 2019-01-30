@@ -1,17 +1,16 @@
 databaseBrowseTabPanelEventReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
         
     return(list())
 }
 
 databaseBrowseTabPanelReactive <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
     
     return(list())
 }
 
-databaseBrowseTabPanelRenderUI <- function(output,session,allReactiveVars,
-    allReactiveMsgs) {
+databaseBrowseTabPanelRenderUI <- function(output,session,allReactiveVars) {
     
     output$browseReferenceMetabolites <- renderDT({
         con <- dbConnect(drv=RSQLite::SQLite(),dbname=METABO_DB)
@@ -36,15 +35,13 @@ databaseBrowseTabPanelRenderUI <- function(output,session,allReactiveVars,
 }
 
 databaseBrowseTabPanelObserve <- function(input,output,session,
-    allReactiveVars,allReactiveMsgs) {
+    allReactiveVars) {
     databaseBrowseTabPanelReactiveEvents <- 
         databaseBrowseTabPanelEventReactive(input,output,session,
-            allReactiveVars,allReactiveMsgs)
+            allReactiveVars)
             
     databaseBrowseTabPanelReactiveExprs <- 
-        databaseBrowseTabPanelReactive(input,output,session,allReactiveVars,
-            allReactiveMsgs)
+        databaseBrowseTabPanelReactive(input,output,session,allReactiveVars)
             
-    databaseBrowseTabPanelRenderUI(output,session,allReactiveVars,
-        allReactiveMsgs)
+    databaseBrowseTabPanelRenderUI(output,session,allReactiveVars)
 }
