@@ -89,15 +89,14 @@ analysisTabPanelEventReactive <- function(input,output,session,
         pipelineInput$sampleInfoFile <- 
             file.path(pipelineInput$runPath,"sample_info.txt")
         tryCatch({
-        message("Writing Sample Info table in 'sample_info.txt'")
-        write.table(siDf,pipelineInput$sampleInfoFile,sep="\t",quote=FALSE,
-            row.names=FALSE)
-        }, error=function(e) {
-          message("following error: ",e)
-          shinyjs::html("analysisProgress","Writing Sample Info table")
-          shinyjs::html("sampleInfoError","Error writing Sample Info file!")
-          pipelineControl$uiError <- TRUE
-        })
+            write.table(siDf,pipelineInput$sampleInfoFile,sep="\t",quote=FALSE,
+                row.names=FALSE)
+            }, error=function(e) {
+              message("following error: ",e)
+              shinyjs::html("analysisProgress","Writing Sample Info table")
+              shinyjs::html("sampleInfoError","Error writing Sample Info file!")
+              pipelineControl$uiError <- TRUE
+        },finally="")
         
         # 4. Write a YAML configuration file (maybe later switch to JSON)
         preParams <- list(
@@ -376,20 +375,25 @@ analysisTabPanelEventReactive <- function(input,output,session,
     })
     
     discardAnalysis <- eventReactive(input$discardAnalysis,{
-        # TODO: Reset EVERYTHING (see functions above) and also files
-      
-        # Reset runtime variables
-        allReactiveVars$resetTimefilter()
-        allReactiveVars$resetPreprocess()
-        allReactiveVars$resetNormalization()
+        # Go to first page
+        pipelineControl$step <- "preprocess"
+        pipelineControl$uiError <- FALSE
         
-        allReactiveVars$pipelineInput$sampleInfoFile <- NULL
-        allReactiveVars$pipelineInput$classes <- NULL
+        # Empty some texts
+        lapply(1:length(pipelineInput$filenames),function(i) {
+            updateTextInput(session,paste("sampleName_",i,sep=""),value="")
+            updateTextInput(session,paste("className_",i,sep=""),value="")
+        })
+        
+        # Reset runtime variables
+        allReactiveVars$resetAll()
+        pipelineInput <- allReactiveVars$pipelineInput
+        findPeaks <- allReactiveVars$findPeaks
+        normPeaks <- allReactiveVars$normPeaks
         
         # Reset ALL inputs
-        updateTextInput(session,inputId = "projectName",
-            value=allReactiveVars$pipelineInput$projectName)
-        fileInput("projectFiles", NULL)
+        updateTextInput(session,inputId="projectName",value="")
+        fileInput("projectFiles",NULL)
         updateNumericInput(session,inputId="filterTimeMin",
             value=allReactiveVars$timeFilter$min)
         updateNumericInput(session,inputId="filterTimeMax",
@@ -449,11 +453,11 @@ analysisTabPanelEventReactive <- function(input,output,session,
         
         # Revert Analysis Progress well-panel
         shinyjs::hide("progressWrapper")
-        shinyjs::html("analysisProgress","Analysis progress will be displayed here")
-        
-        # Re-enable disabled action Buttons
-        shinyjs::enable("runPreprocessing")
-        shinyjs::enable("runNormalization")
+        shinyjs::html("analysisProgress",
+            "Analysis progress will be displayed here")
+
+        session$sendCustomMessage("emptyNode",list(id="sampleInfoEdit"))
+        session$sendCustomMessage("emptyNode",list(id="sampleInfoTable"))
         
         # Detete currently uploaded inputs
         #STILL NEED TO RESET FILE UPLOAD#
@@ -461,10 +465,6 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # Delete run directory if analysis not saved
         if (!pipelineControl$analysisSaved)
             unlink(pipelineInput$runPath,recursive=TRUE)
-        
-        # Go to first page
-        pipelineControl$step <- "preprocess"
-        pipelineControl$uiError <- FALSE
     })
     
     saveAnalysis <- eventReactive(input$saveAnalysis,{
@@ -524,7 +524,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
             paste(runParameters,collapse=","),")",sep="")
         
         # Construct delete run parameters query
-        paramQueryRm <- paste("DELETE from run_parameters WHERE ref_run_id = '",pipelineInput$currentRunId,"'",sep = "")
+        paramQueryRm <- paste("DELETE from run_parameters WHERE ref_run_id = '",
+            pipelineInput$currentRunId,"'",sep = "")
 
         # Construct run info query
         infoQuery <- paste("INSERT INTO `run_info` (",
@@ -532,7 +533,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
             paste(runInfo,collapse=","),")",sep="")
         
         # Construct delete run info query
-        infoQueryRm <- paste("DELETE from run_info WHERE run_id = '",pipelineInput$currentRunId,"'",sep = "")
+        infoQueryRm <- paste("DELETE from run_info WHERE run_id = '",
+            pipelineInput$currentRunId,"'",sep = "")
             
         # Booleans to control what has been written
         paramWritten <- infoWritten <- FALSE
@@ -1784,7 +1786,7 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars) {
             shinyjs::disable("runPreprocessing")
             runPreprocess()
         },error=function(e) {
-            #print(e)
+            print(e)
         },
         finally={
             shinyjs::enable("runPreprocessing")

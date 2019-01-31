@@ -262,6 +262,8 @@ initReactiveVars <- function() {
         reactiveVars$resetTimefilter()
         reactiveVars$resetNormalization()
         reactiveVars$resetResults()
+        reactiveVars$resetPaths()
+        reactiveVars$resetControl()
         
         # And the rest
          reactiveVars$spectrePlots <- reactiveValues(
@@ -269,13 +271,52 @@ initReactiveVars <- function() {
                 "Spectre profiles will\nbe displayed here"),
             rendered=TRUE
         )
-        # TODO: Fill the rest please
+        
+        return(reactiveVars)
+    }
+    
+    reactiveVars$resetControl <- function() {
+        reactiveVars$pipelineControl$step <- "preprocess"
+        reactiveVars$pipelineControl$filesUploaded <- FALSE
+        reactiveVars$pipelineControl$sampleInfoFilled <- FALSE
+        reactiveVars$pipelineControl$uiError <- FALSE
+        reactiveVars$pipelineControl$analysisSaved <- FALSE
+        
+        return(reactiveVars)
+    }
+    
+    reactiveVars$resetPaths <- function() {
+        reactiveVars$pipelineInput$currentRunId <- NULL
+        reactiveVars$pipelineInput$runPath <- NULL
+        reactiveVars$pipelineInput$dataPath <- NULL
+        reactiveVars$pipelineInput$dataPathRaw <- NULL
+        reactiveVars$pipelineInput$dataPathTrunc <- NULL
+        reactiveVars$pipelineInput$diagPath <- NULL
+        reactiveVars$pipelineInput$diagPathPreprocess <- NULL
+        reactiveVars$pipelineInput$diagPathNormalization <- NULL
+        reactiveVars$pipelineInput$scriptPath <- NULL
+        
+        reactiveVars$pipelineInput$filenames <- NULL
+        reactiveVars$pipelineInput$classes <- NULL
+        reactiveVars$pipelineInput$sampleInfoFile <- NULL
+        reactiveVars$pipelineInput$xcmsParamFile <- NULL
+        reactiveVars$pipelineInput$xcmsLogFile <- NULL
+        reactiveVars$pipelineInput$normLogFile <- NULL
+        reactiveVars$pipelineInput$dbWriteLogFile <- NULL
+        reactiveVars$pipelineInput$peaksRda <- NULL
+        reactiveVars$pipelineInput$normRda <- NULL
+        
+        reactiveVars$pipelineInput$uploadedFiles <- NULL
+        reactiveVars$pipelineInput$projectName <- NULL
+        reactiveVars$pipelineInput$filenames <- NULL
+        reactiveVars$pipelineInput$classes <- NULL
+        reactiveVars$pipelineInput$refinedTimeBoundaries <- NULL
+        
+        return(reactiveVars)
     }
     
     reactiveVars$resetPreprocess <- function() {
         # Reset readSpec, findPeaks, uploadedFiles
-        # TODO: Fill the function - DONE?
-      
         # Reset readSpec
         reactiveVars$readSpec$profstep  <- 1
         # Reset findPeaks
@@ -287,6 +328,7 @@ initReactiveVars <- function() {
         reactiveVars$findPeaks$max      <- 5
         # Reset uploadFiles
         
+        return(reactiveVars)
     }
 
     reactiveVars$resetTimefilter <- function() {
@@ -294,6 +336,8 @@ initReactiveVars <- function() {
         reactiveVars$timeFilter$do  <- TRUE
         reactiveVars$timeFilter$min <- 600
         reactiveVars$timeFilter$max <- 3000
+        
+        return(reactiveVars)
     }
 
     reactiveVars$resetNormalization <- function() {
@@ -309,10 +353,16 @@ initReactiveVars <- function() {
         reactiveVars$normPeaks$normalize        <- 'rlm'
         reactiveVars$normPeaks$ispan            <- 0
         reactiveVars$normPeaks$corrfacNS        <- 2
+        
+        return(reactiveVars)
     }
     
     reactiveVars$resetResults <- function() {
         reactiveVars$pipelineResults$peaks <- NULL
+        reactiveVars$pipelineResults$norm <- NULL
+        reactiveVars$pipelineResults$currentIndex <- NULL
+        
+        return(reactiveVars)
     }
     
     return(reactiveVars)

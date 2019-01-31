@@ -26,6 +26,10 @@ shinyUI(fluidPage(
             'Shiny.addCustomMessageHandler("changeProgressFooter",',
             'function(msg) {',
             '    $("#progressBarFooter_" + msg.tid).html(msg.value);',
+            '});',
+            'Shiny.addCustomMessageHandler("emptyNode",',
+            'function(msg) {',
+            '    $("#" + msg.id).empty();',
             '});'
         )
     ),

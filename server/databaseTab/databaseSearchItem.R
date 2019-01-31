@@ -96,12 +96,12 @@ databaseSearchTabPanelRenderUI <- function(output,session,allReactiveVars) {
             dbDisconnect(con)
             
             metaboTable$is <- ifelse(
-				metaboTable$is_both,"both",ifelse(
-					metaboTable$is_geom & !metaboTable$is_rlm,"geom",ifelse(
-						!metaboTable$is_geom && metaboTable$is_rlm,"rlm","no"
-					)
-				)
-			)
+                metaboTable$is_both,"both",ifelse(
+                    metaboTable$is_geom & !metaboTable$is_rlm,"geom",ifelse(
+                        !metaboTable$is_geom && metaboTable$is_rlm,"rlm","no"
+                    )
+                )
+            )
             
             datatable(metaboTable[,c("id","mz","rt","is")],
                 rownames=FALSE,
@@ -119,145 +119,145 @@ databaseSearchTabPanelRenderUI <- function(output,session,allReactiveVars) {
     output$metaboDetails <- renderUI({
         info <- input$metaboSummary_cell_clicked
         if (is.null(info$value) || info$col != 0) 
-            return(HTML('Click on a Run ID'))
+            return(HTML('Click on a metabolite ID'))
         
         selectedID = info$value
         con <- dbConnect(drv=RSQLite::SQLite(),dbname=METABO_DB)
         metaboDet <- dbGetQuery(con,paste(DB_QUERIES$METAB_INFO,"'",selectedID,
-			"'",sep=""))
+            "'",sep=""))
         dbDisconnect(con)
     
         metaboDet$isotopes <- ifelse(metaboDet$isotopes=="","-",
-			metaboDet$isotopes)
+            metaboDet$isotopes)
         metaboDet$adduct <- ifelse(metaboDet$adduct=="","-",metaboDet$adduct)
         metaboDet$real_mass <- ifelse(metaboDet$real_mass==0,"-",
-			metaboDet$real_mass)
+            metaboDet$real_mass)
         metaboDet$prop_formula <- ifelse(metaboDet$prop_formula=="","-",
-			metaboDet$prop_formula)
+            metaboDet$prop_formula)
         metaboDet$theor_mass <- ifelse(metaboDet$theor_mass=="","-",
-			metaboDet$theor_mass)
+            metaboDet$theor_mass)
         metaboDet$is_geom <- ifelse(metaboDet$is_geom==0,"No","Yes")
         metaboDet$is_rlm <- ifelse(metaboDet$is_rlm==0,"No","Yes")
         metaboDet$is_both <- ifelse(metaboDet$is_both==0,"No","Yes")
         
         fluidRow(column(12,
-			fluidRow(column(6,
-				wellPanel(
-					h3("Spectrum"),
-					hr(),
-					fluidRow(column(6,
-						"Peak ID"
-					),column(6,
-						tags$strong(metaboDet$id)
-					)),
-					fluidRow(column(6,
-						"m/z"
-					),column(6,
-						tags$strong(metaboDet$mz)
-					)),
-					fluidRow(column(6,
-						"Retention time"
-					),column(6,
-						tags$strong(metaboDet$rt)
-					)),
-					fluidRow(column(6,
-						"Peak m/z minimum"
-					),column(6,
-						tags$strong(metaboDet$mzmin)
-					)),
-					fluidRow(column(6,
-						"Peak m/z maximum"
-					),column(6,
-						tags$strong(metaboDet$mzmax)
-					)),
-					fluidRow(column(6,
-						"Peak RT minimum"
-					),column(6,
-						tags$strong(metaboDet$rtmin)
-					)),
-					fluidRow(column(6,
-						"Peak RT maximum"
-					),column(6,
-						tags$strong(metaboDet$rtmax)
-					)),
-					class="well-panel"
-				)
-			),column(6,
-				wellPanel(
-					h3("Deconvolution"),
-					hr(),
-					fluidRow(column(6,
-						"Isotope"
-					),column(6,
-						tags$strong(metaboDet$isotopes)
-					)),
-					fluidRow(column(6,
-						"Adduct"
-					),column(6,
-						tags$strong(metaboDet$adduct)
-					)),
-					fluidRow(column(6,
-						"Real mass"
-					),column(6,
-						tags$strong(metaboDet$real_mass)
-					)),
-					fluidRow(column(6,
-						"Proposed formula"
-					),column(6,
-						tags$strong(metaboDet$prop_formula)
-					)),
-					fluidRow(column(6,
-						"Theoretical mass"
-					),column(6,
-						tags$strong(metaboDet$theor_mass)
-					)),
-					class="well-panel"
-				)
-			)),
-			fluidRow(column(6,
-				wellPanel(
-					h3("Intensity"),
-					hr(),
-					fluidRow(column(6,
-						"Geometrical IS normalized"
-					),column(6,
-						tags$strong(metaboDet$summarized_intensity_geom)
-					)),
-					fluidRow(column(6,
-						"RLM IS normalized"
-					),column(6,
-						tags$strong(metaboDet$summarized_intensity_rlm)
-					)),
-					fluidRow(column(6,
-						"In both IS normalized"
-					),column(6,
-						tags$strong(metaboDet$summarized_intensity_both)
-					)),
-					class="well-panel"
-				)
-			),column(6,
-				wellPanel(
-					h3("Stability"),
-					hr(),
-					fluidRow(column(6,
-						"Geometrical"
-					),column(6,
-						tags$strong(metaboDet$is_geom)
-					)),
-					fluidRow(column(6,
-						"RLM"
-					),column(6,
-						tags$strong(metaboDet$is_rlm)
-					)),
-					fluidRow(column(6,
-						"Both"
-					),column(6,
-						tags$strong(metaboDet$is_both)
-					)),
-					class="well-panel"
-				)
-			))
-		))
+            fluidRow(column(6,
+                wellPanel(
+                    h3("Spectrum"),
+                    hr(),
+                    fluidRow(column(6,
+                        "Peak ID"
+                    ),column(6,
+                        tags$strong(metaboDet$id)
+                    )),
+                    fluidRow(column(6,
+                        "m/z"
+                    ),column(6,
+                        tags$strong(metaboDet$mz)
+                    )),
+                    fluidRow(column(6,
+                        "Retention time"
+                    ),column(6,
+                        tags$strong(metaboDet$rt)
+                    )),
+                    fluidRow(column(6,
+                        "Peak m/z minimum"
+                    ),column(6,
+                        tags$strong(metaboDet$mzmin)
+                    )),
+                    fluidRow(column(6,
+                        "Peak m/z maximum"
+                    ),column(6,
+                        tags$strong(metaboDet$mzmax)
+                    )),
+                    fluidRow(column(6,
+                        "Peak RT minimum"
+                    ),column(6,
+                        tags$strong(metaboDet$rtmin)
+                    )),
+                    fluidRow(column(6,
+                        "Peak RT maximum"
+                    ),column(6,
+                        tags$strong(metaboDet$rtmax)
+                    )),
+                    class="well-panel"
+                )
+            ),column(6,
+                wellPanel(
+                    h3("Deconvolution"),
+                    hr(),
+                    fluidRow(column(6,
+                        "Isotope"
+                    ),column(6,
+                        tags$strong(metaboDet$isotopes)
+                    )),
+                    fluidRow(column(6,
+                        "Adduct"
+                    ),column(6,
+                        tags$strong(metaboDet$adduct)
+                    )),
+                    fluidRow(column(6,
+                        "Real mass"
+                    ),column(6,
+                        tags$strong(metaboDet$real_mass)
+                    )),
+                    fluidRow(column(6,
+                        "Proposed formula"
+                    ),column(6,
+                        tags$strong(metaboDet$prop_formula)
+                    )),
+                    fluidRow(column(6,
+                        "Theoretical mass"
+                    ),column(6,
+                        tags$strong(metaboDet$theor_mass)
+                    )),
+                    class="well-panel"
+                )
+            )),
+            fluidRow(column(6,
+                wellPanel(
+                    h3("Intensity"),
+                    hr(),
+                    fluidRow(column(6,
+                        "Geometrical IS normalized"
+                    ),column(6,
+                        tags$strong(metaboDet$summarized_intensity_geom)
+                    )),
+                    fluidRow(column(6,
+                        "RLM IS normalized"
+                    ),column(6,
+                        tags$strong(metaboDet$summarized_intensity_rlm)
+                    )),
+                    fluidRow(column(6,
+                        "In both IS normalized"
+                    ),column(6,
+                        tags$strong(metaboDet$summarized_intensity_both)
+                    )),
+                    class="well-panel"
+                )
+            ),column(6,
+                wellPanel(
+                    h3("Stability"),
+                    hr(),
+                    fluidRow(column(6,
+                        "Geometrical"
+                    ),column(6,
+                        tags$strong(metaboDet$is_geom)
+                    )),
+                    fluidRow(column(6,
+                        "RLM"
+                    ),column(6,
+                        tags$strong(metaboDet$is_rlm)
+                    )),
+                    fluidRow(column(6,
+                        "Both"
+                    ),column(6,
+                        tags$strong(metaboDet$is_both)
+                    )),
+                    class="well-panel"
+                )
+            ))
+        ))
     })
 }
 
