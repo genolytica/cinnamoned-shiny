@@ -76,16 +76,16 @@ DB_QUERIES <- list(
         '`run_info` WHERE `run_id`='),
     DIAG_DATA=paste('SELECT `project_name`, `project_path`,',
         '`diagnostic_normalization_path`, `class_file` FROM `run_info` WHERE',
-        'WHERE `run_id`='),
+        '`run_id`='),
     RES_DATA='SELECT `project_path` FROM `run_info` WHERE `run_id`=',
     AUTO_METAB_1='SELECT `id` FROM `peak_info` WHERE `id` LIKE',
     AUTO_METAB_2='ORDER BY `id`',
-    METAB_BY_RANGE_1=paste('SELECT `id`, `mz`, `rt`, `real_mass` FROM',
-        '`peak_info` WHERE `mz`>='),
+    METAB_BY_RANGE_1=paste('SELECT `id`, `mz`, `rt`, `is_geom`, `is_rlm`,',
+        '`is_both` FROM `peak_info` WHERE `mz`>='),
     METAB_BY_RANGE_2='AND `mz`<=',
     METAB_BY_RANGE_3='ORDER BY `mz`',
-    METAB_BY_ID_1=paste('SELECT `id`, `mz`, `rt`, `real_mass` FROM',
-        '`peak_info` WHERE `id` IN'),
+    METAB_BY_ID_1=paste('SELECT `id`, `mz`, `rt`, `is_geom`, `is_rlm`,',
+        '`is_both` FROM `peak_info` WHERE `id` IN'),
     METAB_BY_ID_2='ORDER BY `mz`',
     METAB_INFO=paste('SELECT `id`, `mz`, `rt`, `mzmin`, `mzmax`, `rtmin`,',
         '`rtmax`, `isotopes`, `adduct`, `real_mass`, `prop_formula`,',
@@ -111,11 +111,6 @@ DB_QUERIES <- list(
         'WHERE `ref_run_id`='),
     METAB_ALL_ID=paste('SELECT `id` FROM `peak_info` ORDER BY `id`')
 )
-
-# All metabolite ids
-con <- dbConnect(drv=RSQLite::SQLite(),dbname=METABO_DB)
-METABIDS <- dbGetQuery(con,DB_QUERIES$METAB_ALL_ID)
-dbDisconnect(con)
 
 # Maximum filesize
 options(shiny.maxRequestSize=10*1024^3)

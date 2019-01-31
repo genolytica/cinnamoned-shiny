@@ -6,7 +6,7 @@ initPackages <- function(session) {
     checkPackages(session)
     
     # Initial page loading indicator, until all content is loaded
-    ftProgress <- shiny::Progress$new(session,min=0,max=12)
+    ftProgress <- shiny::Progress$new(session,min=0,max=11)
     ftProgress$set(message="Starting:",value=0)
     on.exit(ftProgress$close())
     
@@ -28,22 +28,22 @@ initPackages <- function(session) {
     require(xcms)
     updateFtProgress(value=4,detail="Loading CAMERA")
     require(CAMERA)
-    updateFtProgress(value=5,detail="Loading Rdisop")
-    require(Rdisop)
-    updateFtProgress(value=6,detail="Loading ggplot2")
+    updateFtProgress(value=5,detail="Loading ggplot2")
     require(ggplot2)
-    updateFtProgress(value=7,detail="Loading parallel")
+    updateFtProgress(value=6,detail="Loading parallel")
     require(parallel)
-    updateFtProgress(value=8,detail="Loading RCurl")
+    updateFtProgress(value=7,detail="Loading RCurl")
     require(RCurl)
-    updateFtProgress(value=9,detail="Loading RSQLite")
+    updateFtProgress(value=8,detail="Loading RSQLite")
     require(RSQLite)
-    updateFtProgress(value=10,detail="Loading tools")
+    updateFtProgress(value=9,detail="Loading tools")
     require(tools)
-    updateFtProgress(value=11,detail="Loading yaml")
+    updateFtProgress(value=10,detail="Loading yaml")
     require(yaml)
-    updateFtProgress(value=12,detail="Loading tools")
+    updateFtProgress(value=11,detail="Loading tools")
     require(tools)
+    #updateFtProgress(value=12,detail="Loading Rdisop")
+    #require(Rdisop)
     # highcharter?
 }
 
@@ -62,7 +62,7 @@ checkPackages <- function(session) {
             require(BiocInstaller)
         }
 
-        pkgs <- c("RNetCDF","xcms","CAMERA","Rdisop","DT","ggplot2","RCurl",
+        pkgs <- c("RNetCDF","xcms","CAMERA","DT","ggplot2","RCurl",#"Rdisop",
             "tools","RSQLite","shiny","shinyjs","shinythemes","colourpicker",
             "yaml","shinyWidgets","utils")
 

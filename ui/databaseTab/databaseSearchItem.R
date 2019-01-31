@@ -63,23 +63,10 @@ databaseSearchTabPanel <- function() {
             wellPanel(
                 h2("Metabolite details"),
                 hr(),
-                htmlOutput("metaboliteDetails"),
+                htmlOutput("metaboDetails"),
                 class="well-panel"
             )
         ))
     ))
 }
-#~           ),class="well-panel"
-#~         )
-#~       )),
-#~       fluidRow(  column(4, 
-#~     wellPanel(
-#~       h2("Filter to Query with"),
-#~       hr(),
-#~       verbatimTextOutput('filter'), 
-#~       style = "overflow: auto;",
-#~       class="well-panel")
-#~     ))
-#~     )
-#~   ))
-#~ }
+
