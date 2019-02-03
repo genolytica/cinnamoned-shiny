@@ -11,7 +11,10 @@ initReactiveVars <- function() {
         filesUploaded=FALSE,
         sampleInfoFilled=FALSE,
         uiError=FALSE,
-        analysisSaved=FALSE
+        analysisSaved=FALSE,
+        analysisDiscarded=FALSE,
+        firstRun=TRUE,
+        newAnalysis=FALSE
     )
     
     reactiveVars$pipelineInput <- reactiveValues(
@@ -232,8 +235,8 @@ initReactiveVars <- function() {
         rendered=TRUE
     )
     
-    reactiveVars$simpleTables <- reactiveValues(
-        sampleTable=NULL
+    reactiveVars$appTables <- reactiveValues(
+        runInfoTable=NULL
     )
     
     reactiveVars$reset <- function(which=c("all","preprocess","timefilter",
@@ -281,6 +284,8 @@ initReactiveVars <- function() {
         reactiveVars$pipelineControl$sampleInfoFilled <- FALSE
         reactiveVars$pipelineControl$uiError <- FALSE
         reactiveVars$pipelineControl$analysisSaved <- FALSE
+        reactiveVars$pipelineControl$analysisDiscarded <- FALSE
+        # firstRun is not touched and newAnalysis not touched
         
         return(reactiveVars)
     }
@@ -296,9 +301,6 @@ initReactiveVars <- function() {
         reactiveVars$pipelineInput$diagPathNormalization <- NULL
         reactiveVars$pipelineInput$scriptPath <- NULL
         
-        reactiveVars$pipelineInput$filenames <- NULL
-        reactiveVars$pipelineInput$classes <- NULL
-        reactiveVars$pipelineInput$sampleInfoFile <- NULL
         reactiveVars$pipelineInput$xcmsParamFile <- NULL
         reactiveVars$pipelineInput$xcmsLogFile <- NULL
         reactiveVars$pipelineInput$normLogFile <- NULL
@@ -310,6 +312,7 @@ initReactiveVars <- function() {
         reactiveVars$pipelineInput$projectName <- NULL
         reactiveVars$pipelineInput$filenames <- NULL
         reactiveVars$pipelineInput$classes <- NULL
+        reactiveVars$pipelineInput$sampleInfoFile <- NULL
         reactiveVars$pipelineInput$refinedTimeBoundaries <- NULL
         
         return(reactiveVars)

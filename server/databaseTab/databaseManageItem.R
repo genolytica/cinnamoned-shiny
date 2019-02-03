@@ -5,7 +5,7 @@ databaseManageTabPanelEventReactive <- function(input,output,session,
     delId <- reactiveVal()
     
     preDeleteRun <- eventReactive(input$deleteRunButton, {
-        delId(as.numeric(strsplit(input$deleteRunButton, "_")[[1]][2]))
+        delId(strsplit(input$deleteRunButton, "_")[[1]][2])
         showModal(modalDialog(
             title="Confirm run delete!",
             "Run ",tags$strong(delId())," is about to be deleted. Are you ",
@@ -21,26 +21,40 @@ databaseManageTabPanelEventReactive <- function(input,output,session,
     
     deleteRun <- eventReactive(input$confirmRunDelete,{
         tryCatch({
-            con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
-            rs <- dbSendQuery(con,paste(DB_QUERIES$DELETE_RUN,"'",delId(),"'",
-                sep=""))
-            dbClearResult(rs)
+			did <- as.character(delId())
+			con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
+            nr <- dbExecute(con,paste(DB_QUERIES$DELETE_RUN,"'",did,"'",sep=""))
             dbDisconnect(con)
-            unlink(file.path(pipelineInput$basePath,delId(),recursive=TRUE))
             
-            showModal(modalDialog(
-                title="Run deleted!",
-                "Run ",tags$strong(delId())," and all related files have been ",
-                    "succesfully deleted!",
-                easyClose=TRUE,
-                footer=tagList(
-                    modalButton("OK",icon=icon("check"))
-                )
-            ))
+            ex <- unlink(file.path(pipelineInput$basePath,did),recursive=TRUE,
+				force=TRUE)
+			if (ex==0 && nr>0)
+				showModal(modalDialog(
+					title="Run deleted!",
+					"Run ",tags$strong(did)," and all related files have been ",
+						"succesfully deleted!",
+					easyClose=TRUE,
+					footer=tagList(
+						modalButton("OK",icon=icon("check"))
+					)
+				))
+			else
+				showModal(modalDialog(
+					title="Run not properly deleted!",
+					"Run ",tags$strong(did)," and all related files have not ",
+					"been properly deleted! Please report the above run ID to ",
+					"the administrator along with the following:",
+					tags$br(),"Unlink exit status: ",ex,
+					tags$br(),"Database rows affected: ",nr,
+					easyClose=TRUE,
+					footer=tagList(
+						modalButton("OK",icon=icon("check"))
+					)
+				))
         },error=function(e) {
             showModal(modalDialog(
                 title="Error!",
-                "Run ",tags$strong(delId())," has not been properly deleted! ",
+                "Run ",tags$strong(did)," has not been properly deleted! ",
                 "Leftovers (files, images) may remain... Please report the ",
                 "run ID to the administrator with the following error:",
                 tags$br(),e,
@@ -60,52 +74,71 @@ databaseManageTabPanelEventReactive <- function(input,output,session,
 
 databaseManageTabPanelReactive <- function(input,output,session,
     allReactiveVars) {
+	appTables <- allReactiveVars$appTables
+	
+	runInfoTablePoll <- reactivePoll(5000,session,checkFunc=function() {		
+		con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
+		rowcount <- dbGetQuery(con,"SELECT Count(*) FROM `run_info`")[1,1]
+		dbDisconnect(con)
+		return(rowcount)
+	},valueFunc=function() {
+		con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
+		cinnamonDB <- dbGetQuery(con,DB_QUERIES$RUN_INFO_ALL)
+		dbDisconnect(con)
+		appTables$runInfoTable <- cinnamonDB
+		return(cinnamonDB)
+	})
+	
+	return(list(
+		runInfoTablePoll=runInfoTablePoll
+	))
 }
 
 databaseManageTabPanelRenderUI <- function(output,session,allReactiveVars) {
+	appTables <- allReactiveVars$appTables
+	
     output$runInfo = renderDT({
-        con <- dbConnect(drv=RSQLite::SQLite(),dbname=APP_DB)
-        cinnamonDB <- dbGetQuery(con,DB_QUERIES$RUN_INFO_ALL)
-        dbDisconnect(con)
-        cinnamonDB$Delete <- shinyInput(actionButton,nrow(cinnamonDB),
-            'deleteRun_',cinnamonDB$run_id,label="Delete",
-            icon=icon("minus-circle"),class="btn-primary btn-xs",
-            onclick='Shiny.onInputChange(\"deleteRunButton\",this.id)')
-        names(cinnamonDB)[1:3] <- c("Run ID","Project name","Date")
-        cinnamonDB$Date <- as.POSIXct(cinnamonDB$Date,
-            format="%Y-%m-%d %H:%M:%S")
-        #cinnamonDB$Date$zone <- NULL
-        datatable(cinnamonDB,
-            rownames=FALSE,
-            class="display",
-            filter="top",
-            escape=FALSE,
-            selection=list(
-                mode="single",
-                target = 'cell'
-            ),
-            options=list(
-                columnDefs=list(
-                    list(
-                        width="20%",
-                        targets=0
-                    ),
-                    list(
-                        width="35%",
-                        targets=1
-                    ),
-                    list(
-                        width="30%",
-                        targets=2
-                    ),
-                    list(
-                        width="10%",
-                        targets=3
-                    )
-                )
-            )
-        ) %>% formatStyle(1,cursor='alias') %>% 
-            formatDate(3,method='toLocaleString')
+		if (!is.null(appTables$runInfoTable)) {
+			cinnamonDB <- appTables$runInfoTable
+			cinnamonDB$Delete <- shinyInput(actionButton,nrow(cinnamonDB),
+				'deleteRun_',cinnamonDB$run_id,label="Delete",
+				icon=icon("minus-circle"),class="btn-primary btn-xs",
+				onclick='Shiny.onInputChange(\"deleteRunButton\",this.id)')
+			names(cinnamonDB)[1:3] <- c("Run ID","Project name","Date")
+			cinnamonDB$Date <- as.POSIXct(cinnamonDB$Date,
+				format="%Y-%m-%d %H:%M:%S")
+			datatable(cinnamonDB,
+				rownames=FALSE,
+				class="display",
+				filter="top",
+				escape=FALSE,
+				selection=list(
+					mode="single",
+					target = 'cell'
+				),
+				options=list(
+					columnDefs=list(
+						list(
+							width="20%",
+							targets=0
+						),
+						list(
+							width="35%",
+							targets=1
+						),
+						list(
+							width="30%",
+							targets=2
+						),
+						list(
+							width="10%",
+							targets=3
+						)
+					)
+				)
+			) %>% formatStyle(1,cursor='alias') %>% 
+				formatDate(3,method='toLocaleString')
+		}
     })
     
     output$paramsInfo <- renderUI({
@@ -287,12 +320,21 @@ databaseManageTabPanelObserve <- function(input,output,session,
     preDeleteRun <- databaseManageTabPanelReactiveEvents$preDeleteRun
     deleteRun <- databaseManageTabPanelReactiveEvents$deleteRun
     
+    databaseManageTabPanelReactiveExprs <-
+		databaseManageTabPanelReactive(input,output,session,allReactiveVars)
+    
+    runInfoTablePoll <- databaseManageTabPanelReactiveExprs$runInfoTablePoll
+    
     databaseManageTabPanelRenderUI(output,session,allReactiveVars)
   
     observe({
         preDeleteRun()
         deleteRun()
     })
+    
+    observe({
+		runInfoTablePoll()
+	})
 }
 
 # https://stackoverflow.com/questions/45739303/r-shiny-handle-action-buttons-in-data-table

@@ -35,17 +35,7 @@ analysisTabPanelPreprocess <- function() {
                     div(id="projectNameError",class="input-error",
                         ERROR_MESSAGES$projectName)
                 )),
-                fluidRow(column(12,
-                    fileInput(
-                        inputId="projectFiles", 
-                        label="Upload NetCDF files",
-                        multiple=TRUE,
-                        accept=c(
-                            "application/x-netcdf",
-                            "application/x-netcdf4"
-                        )
-                    )
-                )),
+                htmlOutput("projectFilesWrapper"),
                 fluidRow(column(6,
                     div(
                         style="font-weight:bold;",
@@ -93,49 +83,40 @@ analysisTabPanelPreprocess <- function() {
             wellPanel(
                 h4("Sample(s) information"),
                 hr(),
-                fluidRow(column(12,
-                    fileInput(
-                        inputId="sampleInfoFile", 
-                        label="Upload sample-class relationship file",
-                        accept=c("text/*")
-                    )
-                )),
-                div(
-                    id="sampleClassInfoWrapper",
-                    fluidRow(column(12,
-                        div(
-                            style="font-weight:bold; font-size:1.1em",
-                            "OR"
-                        )
-                    )),
-                    fluidRow(column(12,
-                        p(
-                            
-                            paste("Manually enter sample-class information ",
-                                "(after file upload)",sep="")
-                        )
-                    )),
-                    fluidRow(column(6,
-                        div(
-                            style=paste("font-weight:bold;",
-                                "border-style: none none dashed none;",
-                                "border-width: 2px;"),
-                            "Filename"
-                        )
-                    ),column(6,
-                        div(
-                            style=paste("font-weight:bold;",
-                                "border-style: none none dashed none;",
-                                "border-width: 2px;"),
-                            "Class"
-                        )
-                    )),
-                    fluidRow(column(12,
-                        div(class="small",
-                            htmlOutput("sampleInfoEdit")
-                        )
-                    ))
-                ),
+                htmlOutput("sampleInfoFileWrapper"),
+				fluidRow(column(12,
+					div(
+						style="font-weight:bold; font-size:1.1em",
+						"OR"
+					)
+				)),
+				fluidRow(column(12,
+					p(
+						
+						paste("Manually enter sample-class information ",
+							"(after file upload)",sep="")
+					)
+				)),
+				fluidRow(column(6,
+					div(
+						style=paste("font-weight:bold;",
+							"border-style: none none dashed none;",
+							"border-width: 2px;"),
+						"Filename"
+					)
+				),column(6,
+					div(
+						style=paste("font-weight:bold;",
+							"border-style: none none dashed none;",
+							"border-width: 2px;"),
+						"Class"
+					)
+				)),
+				fluidRow(column(12,
+					div(class="small",
+						htmlOutput("sampleInfoEdit")
+					)
+				)),
                 class="well-panel"
             )
         ))
@@ -229,16 +210,22 @@ analysisTabPanelPreprocess <- function() {
                                     label="EIBPC combine steps", 
                                     value="3"
                                 ),
-                                div(id="xcmsEIBPCStepsError",class="input-error",
-                                    ERROR_MESSAGES$xcmsEIBPCSteps)
+                                div(
+									id="xcmsEIBPCStepsError",
+									class="input-error",
+                                    ERROR_MESSAGES$xcmsEIBPCSteps
+                                )
                             ),column(4,
                                 textInput(
                                     inputId="xcmsEIBPCMaxPeaks", 
                                     label="Maximum peaks per EIBPC", 
                                     value="5"
                                 ),
-                                div(id="xcmsEIBPCMaxPeaksError",class="input-error",
-                                    ERROR_MESSAGES$xcmsEIBPCMaxPeaks)
+                                div(
+									id="xcmsEIBPCMaxPeaksError",
+									class="input-error",
+                                    ERROR_MESSAGES$xcmsEIBPCMaxPeaks
+                                )
                             ))
                         )
                     )

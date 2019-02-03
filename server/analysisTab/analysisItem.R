@@ -31,6 +31,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
 
         # 1. Create the directory structure
         # 1a. Define the structure
+        pipelineInput$projectName <- as.character(input$projectName)
         pipelineInput$currentRunId <- format(Sys.time(),"%d%m%Y%H%M%S")
         pipelineInput$runPath <- file.path(pipelineInput$basePath,
             pipelineInput$currentRunId)
@@ -149,6 +150,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # 5c. Close the xcmsPipeline log file
         sink(type="message")
         sink()
+        close(xcmsLog)
         
         # 5d. Save the peaks for backwards compatibility and reusability
         peaks <- peaks$peaks
@@ -170,6 +172,21 @@ analysisTabPanelEventReactive <- function(input,output,session,
         shinyjs::enable("sampleInfoFile")
         shinyjs::enable("resetPreprocessing")
         shinyjs::enable("resetNormalization")
+        
+        ########################################################################
+        # Reset the timebar for later
+		updateShinyProgressBar(
+			shinyProgressData=list(
+                session=session,
+                progressId="preprocessProgressBar",
+                progressTotal=16,
+                textId="pre"
+            ),
+			pbValue=0,
+			headerMsg="",
+			footerMsg=""
+		)
+		########################################################################
         
         # Switch to timefilter status so that the UI can be rendered
         pipelineControl$step <- "timefilter" # Works! Tested.
@@ -362,6 +379,7 @@ analysisTabPanelEventReactive <- function(input,output,session,
         
         sink(type="message")
         sink()
+        close(normLog)
         
         pipelineResults$norm <- norm
         pipelineInput$normRda <- file.path(pipelineInput$runPath,"norm.RData")
@@ -370,101 +388,131 @@ analysisTabPanelEventReactive <- function(input,output,session,
         # Re-enable controls
         sapply(normInputs,shinyjs::enable)
         
+        ########################################################################
+        # Reset the timebar for later
+		updateShinyProgressBar(
+			shinyProgressData=list(
+                session=session,
+                progressId="normalizationProgressBar",
+                progressTotal=3,
+                textId="norm"
+            ),
+			pbValue=0,
+			headerMsg="",
+			footerMsg=""
+		)
+		########################################################################
+        
+        # So as to record the change, talk to the fileInput and then be true
+        # again upon hitting the discard/new analysis button
+        pipelineControl$newAnalysis <- FALSE
         pipelineResults$currentIndex <- 1
         pipelineControl$step <- "result"
     })
     
-    discardAnalysis <- eventReactive(input$discardAnalysis,{
-        # Go to first page
-        pipelineControl$step <- "preprocess"
-        pipelineControl$uiError <- FALSE
-        
-        # Empty some texts
-        lapply(1:length(pipelineInput$filenames),function(i) {
-            updateTextInput(session,paste("sampleName_",i,sep=""),value="")
-            updateTextInput(session,paste("className_",i,sep=""),value="")
-        })
-        
-        # Reset runtime variables
-        allReactiveVars$resetAll()
-        pipelineInput <- allReactiveVars$pipelineInput
-        findPeaks <- allReactiveVars$findPeaks
-        normPeaks <- allReactiveVars$normPeaks
-        
-        # Reset ALL inputs
-        updateTextInput(session,inputId="projectName",value="")
-        fileInput("projectFiles",NULL)
-        updateNumericInput(session,inputId="filterTimeMin",
-            value=allReactiveVars$timeFilter$min)
-        updateNumericInput(session,inputId="filterTimeMax",
-            value=allReactiveVars$timeFilter$max)
-        updateNumericInput(session,inputId="profileStep",
-            value=allReactiveVars$readSpec$profstep)
-        updateNumericInput(session,inputId="xcmsSNR",
-            value=allReactiveVars$findPeaks$snthresh)
-        updateNumericInput(session,inputId="xcmsEIBPCSize",
-            value=allReactiveVars$findPeaks$step)
-        updateNumericInput(session,inputId="xcmsFWHM",
-            value=allReactiveVars$findPeaks$fwhm)
-        updateNumericInput(session,inputId="xcmsSigma",
-            value=allReactiveVars$findPeaks$sigma)
-        updateNumericInput(session,inputId="xcmsEIBPCSteps",
-            value=allReactiveVars$findPeaks$steps)
-        updateNumericInput(session,inputId="xcmsEIBPCMaxPeaks",
-            value=allReactiveVars$findPeaks$max)
-        
-        updateSelectInput(session,inputId="method",
-            selected=allReactiveVars$normPeaks$method)
-        updateSelectInput(session,inputId="correctfor",
-            selected=allReactiveVars$normPeaks$correctfor)
-        updateNumericInput(session,inputId="mztol",
-            value=allReactiveVars$normPeaks$mztol)
-        updateCheckboxInput(session,inputId="diagPlotsInclude",
-            value=allReactiveVars$normPeaks$diagPlotsInclude)
-        updateSelectInput(session,inputId="export",
-            selected=allReactiveVars$normPeaks$export)
-        updateNumericInput(session,inputId="tspan",
-            value=allReactiveVars$normPeaks$tspan)
-        updateNumericInput(session,inputId="it",
-            value=allReactiveVars$normPeaks$it)
-        updateNumericInput(session,inputId="corrfac",
-            value=allReactiveVars$normPeaks$corrfac)
-        updateNumericInput(session,inputId="cutq",
-            value=allReactiveVars$normPeaks$cutq)
-        updateSelectInput(session,inputId="normalize",
-            selected=allReactiveVars$normPeaks$normalize)
-        updateNumericInput(session,inputId="ispan",
-            value=allReactiveVars$normPeaks$ispan)
-        updateNumericInput(session,inputId="corrfacNS",
-            value=allReactiveVars$normPeaks$corrfacNS)
-        
-        lapply(1:length(pipelineInput$filenames),function(i) {
-            updateNumericInput(
-                session=session,
-                inputId=paste("reviewMinTime",i,sep="_"),
-                value=600
-            )
-            updateNumericInput(
-                session=session,
-                inputId=paste("reviewMaxTime",i,sep="_"),
-                value=3000
-            )
-        })
-        
-        # Revert Analysis Progress well-panel
-        shinyjs::hide("progressWrapper")
-        shinyjs::html("analysisProgress",
-            "Analysis progress will be displayed here")
-
-        session$sendCustomMessage("emptyNode",list(id="sampleInfoEdit"))
-        session$sendCustomMessage("emptyNode",list(id="sampleInfoTable"))
-        
-        # Detete currently uploaded inputs
-        #STILL NEED TO RESET FILE UPLOAD#
-
-        # Delete run directory if analysis not saved
-        if (!pipelineControl$analysisSaved)
-            unlink(pipelineInput$runPath,recursive=TRUE)
+    preDiscardAnalysis <- eventReactive(input$discardAnalysis, {
+		if (!pipelineControl$analysisSaved 
+			&& !pipelineControl$analysisDiscarded)
+			showModal(modalDialog(
+				title="Confirm analysis discard!",
+				"Are you sure you want to discard the present analysis? This ",
+				"action cannot be undone!",
+				easyClose=FALSE,
+				footer=tagList(
+					modalButton("Cancel",icon=icon("ban")),
+					actionButton("confirmAnalysisDiscard","Discard",
+						class="btn-danger",icon=icon("exclamation-triangle"))
+				)
+			))
+    })
+    
+    discardAnalysis <- eventReactive(input$confirmAnalysisDiscard,{
+		# Delete run directory if analysis not saved
+        if (!pipelineControl$analysisDiscarded) {
+            ex <- unlink(pipelineInput$runPath,recursive=TRUE,force=TRUE)
+            pipelineControl$analysisDiscarded <- TRUE
+            updateActionButton(session,"discardAnalysis",
+                label="Start new analysis",icon=icon("star"))
+            updateActionButton(session,"saveAnalysis",
+				label="Analysis discarded!",icon=icon("frown-o"))
+			shinyjs::disable("saveAnalysis")
+			removeModal()
+		}
+	})
+    
+    newAnalysis <- eventReactive(input$discardAnalysis,{
+		if (pipelineControl$analysisSaved || pipelineControl$analysisDiscarded){ 
+			# Go to first page
+			pipelineControl$firstRun <- FALSE
+			pipelineControl$newAnalysis <- TRUE
+			
+			# Reset runtime variables
+			allReactiveVars$resetAll()
+			
+			# Reset ALL inputs
+			updateTextInput(session,inputId="projectName",value="")
+			updateNumericInput(session,inputId="filterTimeMin",
+				value=allReactiveVars$timeFilter$min)
+			updateNumericInput(session,inputId="filterTimeMax",
+				value=allReactiveVars$timeFilter$max)
+			updateNumericInput(session,inputId="profileStep",
+				value=allReactiveVars$readSpec$profstep)
+			updateNumericInput(session,inputId="xcmsSNR",
+				value=allReactiveVars$findPeaks$snthresh)
+			updateNumericInput(session,inputId="xcmsEIBPCSize",
+				value=allReactiveVars$findPeaks$step)
+			updateNumericInput(session,inputId="xcmsFWHM",
+				value=allReactiveVars$findPeaks$fwhm)
+			updateNumericInput(session,inputId="xcmsSigma",
+				value=allReactiveVars$findPeaks$sigma)
+			updateNumericInput(session,inputId="xcmsEIBPCSteps",
+				value=allReactiveVars$findPeaks$steps)
+			updateNumericInput(session,inputId="xcmsEIBPCMaxPeaks",
+				value=allReactiveVars$findPeaks$max)
+			
+			updateSelectInput(session,inputId="method",
+				selected=allReactiveVars$normPeaks$method)
+			updateSelectInput(session,inputId="correctfor",
+				selected=allReactiveVars$normPeaks$correctfor)
+			updateNumericInput(session,inputId="mztol",
+				value=allReactiveVars$normPeaks$mztol)
+			updateCheckboxInput(session,inputId="diagPlotsInclude",
+				value=allReactiveVars$normPeaks$diagPlotsInclude)
+			updateSelectInput(session,inputId="export",
+				selected=allReactiveVars$normPeaks$export)
+			updateNumericInput(session,inputId="tspan",
+				value=allReactiveVars$normPeaks$tspan)
+			updateNumericInput(session,inputId="it",
+				value=allReactiveVars$normPeaks$it)
+			updateNumericInput(session,inputId="corrfac",
+				value=allReactiveVars$normPeaks$corrfac)
+			updateNumericInput(session,inputId="cutq",
+				value=allReactiveVars$normPeaks$cutq)
+			updateSelectInput(session,inputId="normalize",
+				selected=allReactiveVars$normPeaks$normalize)
+			updateNumericInput(session,inputId="ispan",
+				value=allReactiveVars$normPeaks$ispan)
+			updateNumericInput(session,inputId="corrfacNS",
+				value=allReactiveVars$normPeaks$corrfacNS)
+			
+			lapply(1:length(pipelineInput$filenames),function(i) {
+				updateNumericInput(
+					session=session,
+					inputId=paste("reviewMinTime",i,sep="_"),
+					value=600
+				)
+				updateNumericInput(
+					session=session,
+					inputId=paste("reviewMaxTime",i,sep="_"),
+					value=3000
+				)
+			})
+			
+			# Revert Analysis Progress well-panel
+			shinyjs::hide("progressWrapper")
+			shinyjs::html("analysisProgress",
+				"Analysis progress will be displayed here")
+		}
     })
     
     saveAnalysis <- eventReactive(input$saveAnalysis,{
@@ -555,8 +603,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
             tryCatch({
                 message("Sending query to write run parameters:")
                 message(paramQuery)
-                rs1 <- dbSendQuery(con,paramQuery)
-                dbClearResult(rs1)
+                nr <- dbExecute(con,paramQuery)
+                message(nr, "rows inserted")
                 paramWritten <- TRUE
             },error=function(e) {
                 message("Caught error while writing run parameters:")
@@ -567,8 +615,8 @@ analysisTabPanelEventReactive <- function(input,output,session,
             tryCatch({
                 message("Sending query to write run info:")
                 message(infoQuery)
-                rs2 <- dbSendQuery(con,infoQuery)
-                dbClearResult(rs2)
+                nr <- dbExecute(con,infoQuery)
+                message(nr, "rows inserted")
                 infoWritten <- TRUE
             },error=function(e) {
                 message("Caught error while writing run info:")
@@ -590,22 +638,38 @@ analysisTabPanelEventReactive <- function(input,output,session,
             message("Caught error: ",e)
             message("Clearing potential leftovers")
             con <- dbConnect(SQLite(),dbname=APP_DB)
-            if (!infoWritten || !paramWritten) {
-                rs1Rm <- dbSendQuery(con,paramQueryRm)
-                dbClearResult(rs1Rm)
-                rs2Rm <- dbSendQuery(con,infoQueryRm)
-                dbClearResult(rs2Rm)
+            if (!paramWritten) {
+                nrr <- dbExecute(con,paramQueryRm)
+                message(nrr," parameter results cleared")
+            }
+            if (!infoWritten) {
+                nrr <- dbExecute(con,infoQueryRm)
+                message(nrr," info results cleared")
             }
             dbDisconnect(con)
+            
+            # Update buttons etc.
+            updateActionButton(session,"saveAnalysis",label="Save failed!",
+                icon=icon("thumbs-o-down"))
+            updateActionButton(session,"discardAnalysis",
+                label="Retry analysis",icon=icon("star-half-o"))
+            shinyjs::disable("saveAnalysis")
             pipelineControl$uiError <- TRUE
         },finally="")
         
         # Delete data directory
         message("Deleting CDF file data directory ",pipelineInput$dataPath)
-        unlink(pipelineInput$dataPath,recursive=TRUE)
-        
+        tryCatch({
+			ex <- unlink(pipelineInput$dataPath,recursive=TRUE,force=TRUE)
+			message("unlink command exit was ",ex)
+		},error=function(e) {
+			message("Caught error while deleting CDF data directory ",e)
+			message("unlink command exit was ",ex)
+		},finally="")
+		
         sink(type="message")
         sink()
+        close(dbLog)
     })
     
     getDiagTab <- eventReactive(input$analysisDiagnosticPlots,{
@@ -628,7 +692,9 @@ analysisTabPanelEventReactive <- function(input,output,session,
         resetTimeBoundaries=resetTimeBoundaries,
         proceedToNormalization=proceedToNormalization,
         runNormalization=runNormalization,
+        preDiscardAnalysis=preDiscardAnalysis,
         discardAnalysis=discardAnalysis,
+        newAnalysis=newAnalysis,
         saveAnalysis=saveAnalysis,
         getDiagTab=getDiagTab
     ))
@@ -923,10 +989,16 @@ analysisTabPanelReactive <- function(input,output,session,
     # Uploaded files
     uploadFiles <- reactive({
         if (!is.null(input$projectFiles)) {
-            pipelineInput$uploadedFiles <- input$projectFiles$datapath
-            pipelineInput$filenames <- input$projectFiles$name
-            pipelineInput$classes <- rep("",length(pipelineInput$filenames))
-            pipelineControl$filesUploaded <- TRUE
+			# *&*@^#&%^###!!@@
+			isolate({
+				pipelineInput$uploadedFiles <- input$projectFiles$datapath
+				pipelineInput$filenames <- input$projectFiles$name
+				pipelineControl$filesUploaded <- TRUE
+				lapply(1:length(input$projectFiles$name),function(i) {
+					#updateTextInput(session,paste("sampleName_",i,sep=""),value="")
+					updateTextInput(session,paste("className_",i,sep=""),value="")
+				})
+			})
         }
     })
     
@@ -936,27 +1008,19 @@ analysisTabPanelReactive <- function(input,output,session,
             meta <- read.delim(input$sampleInfoFile$datapath)
             pipelineInput$filenames <- as.character(meta[,1])
             pipelineInput$classes <- as.character(meta[,2])
-            shinyjs::hide("sampleClassInfoWrapper")
         }
-        else
-            shinyjs::show("sampleClassInfoWrapper")
     })
     
     # Sample classes
     classNames <- reactive({
         if (pipelineControl$step=="preprocess") {
-            #if (!any(pipelineInput$classes==""))
-            #    lapply(1:length(pipelineInput$classes),function(i,m) {
-            #        updateTextInput(session,
-            #            input[[paste("className_",i,sep="")]],value=m[i])
-            #    },pipelineInput$classes)
-            pipelineInput$classes <- 
-                sapply(1:length(pipelineInput$filenames),function(i) {
-                    n <- input[[paste("className_",i,sep="")]]
-                    if (length(n) > 0)
-                        return(n)
-                    return("")
-                })
+			pipelineInput$classes <- 
+				sapply(1:length(pipelineInput$filenames),function(i) {
+					n <- input[[paste("className_",i,sep="")]]
+					if (length(n) > 0)
+						return(n)
+					return("")
+				})
         }
     })
     
@@ -981,7 +1045,7 @@ analysisTabPanelReactive <- function(input,output,session,
     
     # Time filter controls
     doTimeFilterReview <- reactive({
-        if (!is.null(pipelineInput$filenames) 
+        if (!is.null(pipelineInput$filenames)
             && pipelineControl$step=="timefilter"
             && !is.null(input$reviewTime_1)) {
             lapply(1:length(pipelineInput$filenames),function(i) {
@@ -1159,7 +1223,7 @@ analysisTabPanelReactive <- function(input,output,session,
 
                 if (exportType=="all") {
                     final <- cbind(normRef,normMz,normRt,normInten)
-                    write.table(final,file=export,quote=FALSE,sep="\t",na="-",
+                    write.table(final,file=con,quote=FALSE,sep="\t",na="-",
                         row.names=FALSE)
                 }
                 else if (exportType=="armada") {
@@ -1256,10 +1320,43 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars) {
     pipelineResults <- allReactiveVars$pipelineResults
     timeFilter <- allReactiveVars$timeFilter
     
-    # Filenames and classes
+    # File input
+    output$projectFilesWrapper <- renderUI({
+		if (pipelineControl$firstRun || pipelineControl$newAnalysis) {
+			fluidRow(column(12,
+				fileInput(
+					inputId="projectFiles", 
+					label="Upload NetCDF files",
+					multiple=TRUE,
+					accept=c(
+						"application/x-netcdf",
+						"application/x-netcdf4"
+					)
+				)
+			))
+		}
+		else
+			fluidRow(column(12,""))
+	})
+	
+	# Class file input
+	output$sampleInfoFileWrapper <- renderUI({
+		if (pipelineControl$firstRun || pipelineControl$newAnalysis) {
+			fluidRow(column(12,					
+				fileInput(
+				    inputId="sampleInfoFile", 
+				    label="Upload sample-class relationship file",
+				    accept=c("text/*")
+				)
+			))
+		}
+	})
+	
+	# Filenames and classes
     output$sampleInfoEdit <- renderUI({
-        if (!is.null(pipelineInput$filenames)) {
-            lapply(1:length(pipelineInput$filenames),function(i,n,m) {
+        if ((pipelineControl$firstRun || pipelineControl$newAnalysis)
+			&& !is.null(pipelineInput$filenames)) {
+			lapply(1:length(pipelineInput$filenames),function(i,n,m) {
                 fluidRow(column(6,
                     disabled(textInput(
                         inputId=paste("sampleName_",i,sep=""),
@@ -1282,7 +1379,8 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars) {
     
     # Sample info table
     output$sampleInfoTable <- renderTable({
-        if (!is.null(pipelineInput$filenames)
+        if ((pipelineControl$firstRun || pipelineControl$newAnalysis)
+			&& !is.null(pipelineInput$filenames)
             && !any(is.null(pipelineInput$classes))
             && all(length(pipelineInput$classes)>0)
             && length(pipelineInput$filenames)==length(pipelineInput$classes)) {
@@ -1549,7 +1647,9 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars) {
     proceedToNormalization <- 
         analysisTabPanelReactiveEvents$proceedToNormalization
     runNormalization <- analysisTabPanelReactiveEvents$runNormalization
+    preDiscardAnalysis <- analysisTabPanelReactiveEvents$preDiscardAnalysis
     discardAnalysis <- analysisTabPanelReactiveEvents$discardAnalysis
+    newAnalysis <- analysisTabPanelReactiveEvents$newAnalysis
     saveAnalysis <- analysisTabPanelReactiveEvents$saveAnalysis
     getDiagTab <- analysisTabPanelReactiveEvents$getDiagTab
 
@@ -1604,7 +1704,6 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars) {
         analysisTabPanelReactiveExprs$validateiSpan
     validateCorrFacNS <- 
         analysisTabPanelReactiveExprs$validateCorrFacNS
-
 
     uploadFiles <- analysisTabPanelReactiveExprs$uploadFiles
     uploadSampleFile <- analysisTabPanelReactiveExprs$uploadSampleFile
@@ -1849,7 +1948,13 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars) {
         saveAnalysis()
     })
     observe({
+        preDiscardAnalysis()
+    })
+    observe({
         discardAnalysis()
+    })
+    observe({
+        newAnalysis()
     })
     
     observe({
