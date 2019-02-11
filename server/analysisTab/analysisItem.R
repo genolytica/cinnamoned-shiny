@@ -449,6 +449,10 @@ analysisTabPanelEventReactive <- function(input,output,session,
 			# Reset runtime variables
 			allReactiveVars$resetAll()
 			
+			# All uploaded files must be deleted
+			print(input$projectFiles$datapath)
+			unlink(input$projectFiles$datapath,recursive=TRUE,force=TRUE)
+			
 			# Reset ALL inputs
 			updateTextInput(session,inputId="projectName",value="")
 			updateNumericInput(session,inputId="filterTimeMin",

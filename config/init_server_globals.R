@@ -27,6 +27,15 @@ RC <- 0.25
 METABO_DB <- "data/RFLab_MetaboDB.sqlite"
 APP_DB <- "data/cinnamonDB.sqlite"
 
+if (file.exists("config/base_path.txt")) {
+	BASE_PATH <- as.character(read.delim("config/base_path.txt",
+		header=FALSE)[1,1])
+	if (!dir.exists(BASE_PATH)) { # Fallback to hardcoded legacy
+		BASE_PATH <- "/media/HD3/cprocess"
+		dir.create(BASE_PATH,recursive=TRUE)
+	}
+}
+
 # Error messages
 ERROR_MESSAGES <- list(
     projectName=paste("The project name must be smaller than 100", 
