@@ -19,8 +19,7 @@ initReactiveVars <- function() {
     
     reactiveVars$pipelineInput <- reactiveValues(
         currentRunId=NULL,
-        basePath="/media/HD3/cprocess_tmp",
-        #basePath="/media/HD3/cprocess",
+        basePath=BASE_PATH,
         runPath=NULL,
         dataPath=NULL,
         dataPathRaw=NULL,
