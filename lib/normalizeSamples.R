@@ -197,6 +197,10 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
             match.ref[[i]]$pct.iset.rt <- sprintf("%.3f",
                 100*(length(iset.match[[i]])-rtclist$excl)/length(iset.ref))
         }
+        else {
+			rtnew <- peaks[[i]]$rt[match.ref[[i]]$new.idx]
+			rtcor <- rtnew
+		}
         
         # Counts (record the raw for diagnostic purposes)
         matched[[i]]$rawinten[match.ref[[i]]$ref.idx] <- 
@@ -224,6 +228,10 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
                 100*((length(iset.match[[i]])-length(which(abs(intnew[iset]-
                     intref[iset])>cutrat)))/length(iset.ref)))
         }
+        else {
+			intnew <- peaks[[i]]$into[match.ref[[i]]$new.idx]
+			intcor <- intnew
+		}
 
         # Create the rest of the matched tables
         matched[[i]]$mz[match.ref[[i]]$ref.idx] <- 
@@ -240,11 +248,18 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
 
         # Diagnostic plots if requested
         if (!is.null(diagplot)) {
-            plot.match(rtref,ref$mz[match.ref[[i]]$ref.idx],
-                rtcor,peaks[[i]]$mz[match.ref[[i]]$new.idx],
-                rtnew,peaks[[i]]$mz[match.ref[[i]]$new.idx],
-                output=plottype,fil=file.path(diagplot,paste(diagnames[i],
-                "_ALIGNMENT.",plottype,sep="")))
+			if (correctfor != "none")
+				plot.match(rtref,ref$mz[match.ref[[i]]$ref.idx],
+					rtcor,peaks[[i]]$mz[match.ref[[i]]$new.idx],
+					rtnew,peaks[[i]]$mz[match.ref[[i]]$new.idx],
+					output=plottype,fil=file.path(diagplot,paste(diagnames[i],
+					"_ALIGNMENT.",plottype,sep="")))
+			else
+				plot.match(rtref,ref$mz[match.ref[[i]]$ref.idx],
+					rtcor,peaks[[i]]$mz[match.ref[[i]]$new.idx],
+					rtcor,peaks[[i]]$mz[match.ref[[i]]$new.idx],
+					output=plottype,fil=file.path(diagplot,paste(diagnames[i],
+					"_ALIGNMENT.",plottype,sep="")))
             x <- cbind(rtref,rtref)
             y <- cbind(rtnew,rtcor)
             a <- cbind(intref,intref)

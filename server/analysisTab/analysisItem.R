@@ -351,6 +351,31 @@ analysisTabPanelEventReactive <- function(input,output,session,
         sink(normLog)
         sink(normLog,type="message")
         
+        #noNorm <- normalizeSamples(
+        #    peaks=isolate(pipelineResults$peaks),
+        #    dbdata=METABO_DB,
+        #    method=as.character(input$method),
+        #    normalize=as.character(input$normalize),
+        #    correctfor="none",
+        #    time.range=pipelineInput$refinedTimeBoundaries,
+        #    tol=as.numeric(input$mztol),
+        #    tspan=as.numeric(input$tspan),
+        #    ispan=as.numeric(input$ispan),
+        #    tit=as.numeric(input$tit),
+        #    cutq=as.numeric(input$cutq),
+        #    corrfac=as.numeric(input$corrfac),
+        #    cutrat=as.numeric(input$corrfacNS),
+        #    export=file.path(pipelineInput$runPath,"no_norm_output.txt"),
+        #    diagplot=NULL,
+        #    export.type=as.character(input$export),
+        #    shinyProgressData=list(
+        #        session=session,
+        #        progressId="normalizationProgressBar",
+        #        progressTotal=3,
+        #        textId="norm"
+        #    )
+        #)
+        
         norm <- normalizeSamples(
             peaks=isolate(pipelineResults$peaks),
             dbdata=METABO_DB,
