@@ -240,6 +240,12 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
                 paste("summarized_intensity_",method,sep="")])
 			intnew <- peaks[[i]]$into[match.ref[[i]]$new.idx]
 			intcor <- intnew
+			
+			iset.inten[[i]]$new <- intnew[iset]
+            iset.inten[[i]]$ref <- intref[iset]
+            
+            if (!is.null(cutrat))
+                iset <- iset[which(abs(intnew[iset]-intref[iset])<=cutrat)]
 		}
 
         # Create the rest of the matched tables
@@ -278,19 +284,19 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
             plot.rtdev(x,y,l=iset,exclude=badrt.ref,output=plottype,
                 fil=file.path(diagplot,
                 paste(diagnames[i],"_DEVIATION.",plottype,sep="")))
-            #plot.rvn(aa,bb,lim=cutrat,output=plottype,
-            #    fil=file.path(diagplot,
-            #    paste(diagnames[i],"_STANDARDS.",plottype,sep="")))
-            #plot.rvn(a[,1],b[,1],aa,bb,lim=cutrat,output=plottype,
-            #    fil=file.path(diagplot,paste(diagnames[i],"_RAWINT.",
-            #    plottype,sep="")))
-            #plot.rvn(a[,2],b[,2],aa,bb,lim=cutrat,output=plottype,
-            #    fil=file.path(diagplot,paste(diagnames[i],"_NORMINT.",
-            #    plottype,sep="")))
-            #boxplot.mat(cbind(intref,intnew,intcor),
-            #    name=c("Reference","Raw","Normalized"),output=plottype,
-            #    fil=file.path(diagplot,paste(diagnames[i],"_BOXPLOT.",
-            #    plottype,sep="")))
+            plot.rvn(aa,bb,lim=cutrat,output=plottype,
+                fil=file.path(diagplot,
+                paste(diagnames[i],"_STANDARDS.",plottype,sep="")))
+            plot.rvn(a[,1],b[,1],aa,bb,lim=cutrat,output=plottype,
+                fil=file.path(diagplot,paste(diagnames[i],"_RAWINT.",
+                plottype,sep="")))
+            plot.rvn(a[,2],b[,2],aa,bb,lim=cutrat,output=plottype,
+                fil=file.path(diagplot,paste(diagnames[i],"_NORMINT.",
+                plottype,sep="")))
+            boxplot.mat(cbind(intref,intnew,intcor),
+                name=c("Reference","Raw","Normalized"),output=plottype,
+                fil=file.path(diagplot,paste(diagnames[i],"_BOXPLOT.",
+                plottype,sep="")))
             
             # Keep plot data for "shiny" app and reproducibility
             plot.data.list[[i]] <- list(

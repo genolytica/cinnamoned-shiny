@@ -351,30 +351,30 @@ analysisTabPanelEventReactive <- function(input,output,session,
         sink(normLog)
         sink(normLog,type="message")
         
-        #noNorm <- normalizeSamples(
-        #    peaks=isolate(pipelineResults$peaks),
-        #    dbdata=METABO_DB,
-        #    method=as.character(input$method),
-        #    normalize=as.character(input$normalize),
-        #    correctfor="none",
-        #    time.range=pipelineInput$refinedTimeBoundaries,
-        #    tol=as.numeric(input$mztol),
-        #    tspan=as.numeric(input$tspan),
-        #    ispan=as.numeric(input$ispan),
-        #    tit=as.numeric(input$tit),
-        #    cutq=as.numeric(input$cutq),
-        #    corrfac=as.numeric(input$corrfac),
-        #    cutrat=as.numeric(input$corrfacNS),
-        #    export=file.path(pipelineInput$runPath,"no_norm_output.txt"),
-        #    diagplot=NULL,
-        #    export.type=as.character(input$export),
-        #    shinyProgressData=list(
-        #        session=session,
-        #        progressId="normalizationProgressBar",
-        #        progressTotal=3,
-        #        textId="norm"
-        #    )
-        #)
+        noNorm <- normalizeSamples(
+            peaks=isolate(pipelineResults$peaks),
+            dbdata=METABO_DB,
+            method=as.character(input$method),
+            normalize=as.character(input$normalize),
+            correctfor="none",
+            time.range=pipelineInput$refinedTimeBoundaries,
+            tol=as.numeric(input$mztol),
+            tspan=as.numeric(input$tspan),
+            ispan=as.numeric(input$ispan),
+            tit=as.numeric(input$tit),
+            cutq=as.numeric(input$cutq),
+            corrfac=as.numeric(input$corrfac),
+            cutrat=as.numeric(input$corrfacNS),
+            export=file.path(pipelineInput$runPath,"no_norm_output.txt"),
+            diagplot=NULL,
+            export.type=as.character(input$export),
+            shinyProgressData=list(
+                session=session,
+                progressId="normalizationProgressBar",
+                progressTotal=3,
+                textId="norm"
+            )
+        )
         
         norm <- normalizeSamples(
             peaks=isolate(pipelineResults$peaks),
@@ -405,6 +405,11 @@ analysisTabPanelEventReactive <- function(input,output,session,
         sink(type="message")
         sink()
         close(normLog)
+        
+        pipelineResults$noNorm <- noNorm
+        pipelineInput$noNormRda <- 
+			file.path(pipelineInput$runPath,"noNorm.RData")
+        save(noNorm,file=pipelineInput$noNormRda)
         
         pipelineResults$norm <- norm
         pipelineInput$normRda <- file.path(pipelineInput$runPath,"norm.RData")
@@ -475,7 +480,6 @@ analysisTabPanelEventReactive <- function(input,output,session,
 			allReactiveVars$resetAll()
 			
 			# All uploaded files must be deleted
-			print(input$projectFiles$datapath)
 			unlink(input$projectFiles$datapath,recursive=TRUE,force=TRUE)
 			
 			# Reset ALL inputs
@@ -1271,6 +1275,70 @@ analysisTabPanelReactive <- function(input,output,session,
         )
     })
     
+    handleExportNoNormResultsDownload <- reactive({
+        output$exportNoNormResults <- downloadHandler(
+            filename=function() {
+                tt <- paste(pipelineInput$currentRunId,"_NONORM_",
+                    format(Sys.time(),format="%Y%m%d%H%M%S"),".txt",sep="")
+            },
+            content=function(con) {
+                peaks <- pipelineResults$peaks
+                norm <- pipelineResults$noNorm$norm
+                exportType <- input$export
+                
+                metaData <- tryCatch(attr(peaks,"meta.data"),
+                    error=function(e) { 
+                        return(NULL) 
+                },finally="")
+                
+                if (!is.list(peaks)) {
+                    p <- list()
+                    p[[1]] <- peaks
+                    if (is.null(metaData))
+                        names(p) <- "peakdata"
+                    else
+                        names(p) <- metaData$Samplename
+                    peaks <- p
+                }
+                
+                if (!is.null(metaData))
+                    expnames <- metaData$Replicate
+                else {
+                    if (!is.null(names(peaks)))
+                        expnames <- names(peaks)
+                    else
+                        expnames <- paste("Sample",1:length(peaks))
+                }
+                
+                normRef <- as.data.frame(norm$reference)
+                normMz <- as.data.frame(norm$mz)
+                normRt <- as.data.frame(norm$rt)
+                normInten <- as.data.frame(norm$norminten)
+                names(normMz) <- paste("mz - ",expnames)
+                names(normRt) <- paste("rt - ",expnames)
+                names(normInten) <- paste("Intensity - ",expnames)
+
+                if (exportType=="all") {
+                    final <- cbind(normRef,normMz,normRt,normInten)
+                    write.table(final,file=con,quote=FALSE,sep="\t",na="-",
+                        row.names=FALSE)
+                }
+                else if (exportType=="armada") {
+                    tmpNorm <- norm$norminten
+                    tmpNorm[which(tmpNorm==0)] <- "NaN"
+                    tmpNorm <- as.data.frame(tmpNorm)
+                    names(tmpNorm) <- paste("Intensity - ",expnames)
+                    final <- cbind(normRef[,"id"],tmpNorm)
+                    nam <- names(final)
+                    nam[1] <- "id"
+                    names(final) <- nam
+                    write.table(final,file=con,quote=FALSE,sep="\t",na="NaN",
+                        row.names=FALSE)
+                }
+            }
+        )
+    })
+    
     # Conditional panel status according to analysis status
     output$panelStatus <- reactive({
         switch(pipelineControl$step,
@@ -1339,7 +1407,8 @@ analysisTabPanelReactive <- function(input,output,session,
         finalRawint=finalRawint,
         finalNormint=finalNormint,
         finalStdint=finalStdint,
-        handleExportResultsDownload=handleExportResultsDownload
+        handleExportResultsDownload=handleExportResultsDownload,
+        handleExportNoNormResultsDownload=handleExportNoNormResultsDownload
     ))
 }
 
@@ -1504,18 +1573,27 @@ analysisTabPanelRenderUI <- function(output,session,allReactiveVars) {
                         )
                     )),
                     fluidRow(br()),
-                    fluidRow(column(6,
+                    fluidRow(column(3,
                         div(
                             class="pull-left",
                             downloadButton(
                                 outputId="exportResults",
-                                label="Download results",
+                                label="Download normalized results",
                                 class="btn-black"
                             )
                         )
                     ),column(3,
                         div(
-                            class="pull-left",
+                            class="pull-right",
+                            downloadButton(
+                                outputId="exportNoNormResults",
+                                label="Download raw results",
+                                class="btn-semi-black"
+                            )
+                        )
+                    ),column(3,
+                        div(
+                            class="pull-right",
                             actionButton(
                                 inputId="discardAnalysis",
                                 label="Discard analysis",
@@ -1747,6 +1825,8 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars) {
     finalStdint <- analysisTabPanelReactiveExprs$finalStdint
     handleExportResultsDownload <- 
         analysisTabPanelReactiveExprs$handleExportResultsDownload
+    handleExportNoNormResultsDownload <- 
+        analysisTabPanelReactiveExprs$handleExportNoNormResultsDownload
     
     # Initialize UI element reactivity  
     analysisTabPanelRenderUI(output,session,allReactiveVars)
@@ -1972,6 +2052,9 @@ analysisTabPanelObserve <- function(input,output,session,allReactiveVars) {
     # Observe reporting page buttons
     observe({
         handleExportResultsDownload()
+    })
+     observe({
+        handleExportNoNormResultsDownload()
     })
     observe({
         saveAnalysis()

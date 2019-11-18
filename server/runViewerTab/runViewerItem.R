@@ -11,6 +11,7 @@ runViewerTabPanelEventReactive <- function(input,output,session,
             runArchive$scriptPath <- file.path(runPath,"scripts")
             peakFile <- file.path(runPath,"peaks.RData")
             normFile <- file.path(runPath,"norm.RData")
+            noNormFile <- file.path(runPath,"noNorm.RData")
             tarFile <- file.path(runPath,paste(runArchive$runId,
                 ".tar.gz",sep=""))
             if (!dir.exists(runPath) && (!file.exists(peakFile)
@@ -38,6 +39,9 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                 z <- load(peakFile)
                 # peaks variable exists in the environment
                 v <- load(normFile)
+                # norm variable exist in the environment
+                if (file.exists(noNormFile))
+					b <- load(noNormFile)
                 # norm variable exist in the environment
                 
                 # The while normalization process must run again...
@@ -115,6 +119,31 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                     sink(normLog)
                     sink(normLog,type="message")
                     
+                    noNorm <- normalizeSamples(
+                        peaks=peaks,
+                        dbdata=METABO_DB,
+                        method=runArchive$normPeaks$method,
+                        normalize=runArchive$normPeaks$normalize,
+                        correctfor="none",
+                        time.range=runArchive$normPeaks$refinedTimeBoundaries,
+                        tol=runArchive$normPeaks$mztol,
+                        tspan=runArchive$normPeaks$tspan,
+                        ispan=runArchive$normPeaks$ispan,
+                        tit=runArchive$normPeaks$tit,
+                        cutq=runArchive$normPeaks$cutq,
+                        corrfac=runArchive$normPeaks$corrfac,
+                        cutrat=runArchive$normPeaks$input$corrfacNS,
+                        export=file.path(runPath,"norm_output.txt"),
+                        diagplot=NULL,
+                        export.type=as.character(runArchive$normPeaks$export),
+                        shinyProgressData=list(
+                            session=session,
+                            progressId="normalizationProgressBarA",
+                            progressTotal=3,
+                            textId="normA"
+                        )
+                    )
+                    
                     norm <- normalizeSamples(
                         peaks=peaks,
                         dbdata=METABO_DB,
@@ -144,6 +173,8 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                     sink(type="message")
                     sink()
                     
+                    runArchive$noNormRda <- file.path(runPath,"noNorm.RData")
+                    save(noNorm,file=runArchive$noNormRda)
                     runArchive$normRda <- file.path(runPath,"norm.RData")
                     save(norm,file=runArchive$normRda)
                 }
@@ -152,6 +183,10 @@ runViewerTabPanelEventReactive <- function(input,output,session,
                 meta <- attr(peaks,"meta.data")
                 runArchive$peaks <- peaks
                 runArchive$norm <- norm
+                if (file.exists(noNormFile))
+					runArchive$noNorm <- noNorm
+				else
+					runArchive$noNorm <- NULL
                 runArchive$filenames <- meta$Filename
                 runArchive$classes <- meta$Class
                 runArchive$currentIndex <- 1
@@ -170,8 +205,6 @@ runViewerTabPanelEventReactive <- function(input,output,session,
         loadSelectedRun=loadSelectedRun,
         getDiagTab=getDiagTab
     ))
-
-
 }
 
 runViewerTabPanelReactive <- function(input,output,session,
@@ -371,6 +404,88 @@ runViewerTabPanelReactive <- function(input,output,session,
         )
     })
     
+    handleExportNoNormChooser <- reactive({
+		if (!is.null(runArchive$currentIndex) && is.null(runArchive$norm)) {
+			showModal(modalDialog(
+				title="Non-normalized data unavailable!",
+				"Raw intensities for run ",tags$strong(runArchive$runId),
+				" is not available as an archive. Please rerun the sample(s) ",
+				"with a newer version of cinnamoned.",
+				easyClose=FALSE,
+				footer=tagList(
+					modalButton("OK",icon=icon("check"))
+				)
+			))
+			return()
+		}
+		else
+			handleExportNoNormResultsDownloadA()
+	})
+    
+    handleExportNoNormResultsDownloadA <- reactive({
+        output$exportNoNormResultsA <- downloadHandler(
+            filename=function() {
+                tt <- paste(runArchive$runId,"_NONORM_",
+                    format(Sys.time(),format="%Y%m%d%H%M%S"),".txt",sep="")
+            },
+            content=function(con) {
+                peaks <- runArchive$peaks
+                norm <- runArchive$noNorm$norm
+                exportType <- runArchive$normPeaks$export
+                
+                metaData <- tryCatch(attr(peaks,"meta.data"),
+                    error=function(e) { 
+                        return(NULL) 
+                },archiveFinally="")
+                
+                if (!is.list(peaks)) {
+                    p <- list()
+                    p[[1]] <- peaks
+                    if (is.null(metaData))
+                        names(p) <- "peakdata"
+                    else
+                        names(p) <- metaData$Samplename
+                    peaks <- p
+                }
+                
+                if (!is.null(metaData))
+                    expnames <- metaData$Replicate
+                else {
+                    if (!is.null(names(peaks)))
+                        expnames <- names(peaks)
+                    else
+                        expnames <- paste("Sample",1:length(peaks))
+                }
+                
+                normRef <- as.data.frame(norm$reference)
+                normMz <- as.data.frame(norm$mz)
+                normRt <- as.data.frame(norm$rt)
+                normInten <- as.data.frame(norm$norminten)
+                names(normMz) <- paste("mz - ",expnames)
+                names(normRt) <- paste("rt - ",expnames)
+                names(normInten) <- paste("Intensity - ",expnames)
+
+                if (exportType=="all") {
+                    archiveFinal <- cbind(normRef,normMz,normRt,normInten)
+                    write.table(archiveFinal,file=con,quote=FALSE,sep="\t",
+                        na="-",row.names=FALSE)
+                }
+                else if (exportType=="armada") {
+                    tmpNorm <- norm$norminten
+                    tmpNorm[which(tmpNorm==0)] <- "NaN"
+                    tmpNorm <- as.data.frame(tmpNorm)
+                    names(tmpNorm) <- paste("Intensity - ",expnames)
+                    archiveFinal <- cbind(normRef[,"id"],tmpNorm)
+                    nam <- names(archiveFinal)
+                    nam[1] <- "id"
+                    names(archiveFinal) <- nam
+                    write.table(archiveFinal,file=con,quote=FALSE,sep="\t",
+                        na="NaN",row.names=FALSE)
+                }
+            }
+        )
+    })
+    
     return(list(
         getCellClick=getCellClick,
         archiveFinalAlignmentPlots=archiveFinalAlignmentPlots,
@@ -379,7 +494,9 @@ runViewerTabPanelReactive <- function(input,output,session,
         archiveFinalRawint=archiveFinalRawint,
         archiveFinalNormint=archiveFinalNormint,
         archiveFinalStdint=archiveFinalStdint,
-        handleExportResultsDownloadA=handleExportResultsDownloadA
+        handleExportResultsDownloadA=handleExportResultsDownloadA,
+        #handleExportNoNormResultsDownloadA=handleExportNoNormResultsDownloadA
+        handleExportNoNormChooser=handleExportNoNormChooser
     ))
 }
 
@@ -434,8 +551,17 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars) {
                                 class="pull-left",
                                 downloadButton(
                                     outputId="exportResultsA",
-                                    label="Download results",
+                                    label="Download normalized results",
                                     class="btn-black"
+                                )
+                            )
+                        ),column(6,
+                            div(
+                                class="pull-left",
+                                downloadButton(
+                                    outputId="exportNoNormResultsA",
+                                    label="Download raw results",
+                                    class="btn-semi-black"
                                 )
                             )
                         ))
@@ -588,6 +714,10 @@ runViewerTabPanelObserve <- function(input,output,session,allReactiveVars) {
         runViewerTabPanelReactiveExprs$archiveFinalStdint
     handleExportResultsDownloadA <- 
         runViewerTabPanelReactiveExprs$handleExportResultsDownloadA
+    #handleExportNoNormResultsDownloadA <- 
+        runViewerTabPanelReactiveExprs$handleExportNoNormResultsDownloadA
+    handleExportNoNormChooser <- 
+		runViewerTabPanelReactiveExprs$handleExportNoNormChooser
     
     runViewerTabPanelRenderUI(output,session,allReactiveVars)
     
@@ -605,6 +735,11 @@ runViewerTabPanelObserve <- function(input,output,session,allReactiveVars) {
     
     observe({
         handleExportResultsDownloadA()
+    })
+    
+    observe({
+        #handleExportNoNormResultsDownloadA()
+        handleExportNoNormChooser()
     })
     
     observe({

@@ -34,6 +34,10 @@ if (file.exists("config/base_path.txt")) {
 		BASE_PATH <- "/media/HD3/cprocess"
 		dir.create(BASE_PATH,recursive=TRUE)
 	}
+} else { # Fallback to hardcoded legacy
+	BASE_PATH <- "/media/HD3/cprocess"
+	if (!dir.exists(BASE_PATH))
+		dir.create(BASE_PATH,recursive=TRUE)
 }
 
 # Error messages

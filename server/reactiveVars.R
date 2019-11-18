@@ -35,6 +35,7 @@ initReactiveVars <- function() {
         dbWriteLogFile=NULL,
         peaksRda=NULL,
         normRda=NULL,
+        noNormRda=NULL,
         tmpPath="/media/HD3/ctmp",
         uploadedFiles=NULL,
         projectName=NULL,

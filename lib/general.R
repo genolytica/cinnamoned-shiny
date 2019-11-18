@@ -332,7 +332,7 @@ rt.smooth <- function(rtnew,rtref,span,fail=NULL,corrfac=2) {
             stop("\nCannot correct with only one pair of points... ",
                 "Please provide the \"fail\" option...",call.=FALSE)
     }
-    else if (length(rtdev)<8) {
+    else if (length(rtdev)<12) {
         warning(paste("Not enough points (",length(rtdev),") for a local ",
             "smoother... Will use a linear",sep=""),call.=FALSE)
         fit <- suppressWarnings(lsfit(x,y))

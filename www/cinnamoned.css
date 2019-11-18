@@ -121,6 +121,16 @@ input[type="color"]:focus,
     border-color: #4F4F4F;
 }
 
+.btn-semi-black {
+    background-color: #696969;
+    border-color: #696969;
+}
+
+.btn-semi-black:hover {
+    background-color: #909090;
+    border-color: #909090;
+}
+
 .run-progress {
     font-family: "Courier New", Courier, monospace;
     font-size: 0.9em;
