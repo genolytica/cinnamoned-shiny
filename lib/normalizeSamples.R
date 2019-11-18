@@ -198,8 +198,15 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
                 100*(length(iset.match[[i]])-rtclist$excl)/length(iset.ref))
         }
         else {
+			rtref <- ref$rt[match.ref[[i]]$ref.idx]
 			rtnew <- peaks[[i]]$rt[match.ref[[i]]$new.idx]
 			rtcor <- rtnew
+			
+			if (!is.null(cutq)) {
+                badrt.ref <- which(abs(rtcor-rtref)>quantile(abs(rtcor-rtref),
+                    cutq))
+                rtcor[badrt.ref] <- -99999
+            }
 		}
         
         # Counts (record the raw for diagnostic purposes)
@@ -229,6 +236,8 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
                     intref[iset])>cutrat)))/length(iset.ref)))
         }
         else {
+			intref <- log2(ref[match.ref[[i]]$ref.idx,
+                paste("summarized_intensity_",method,sep="")])
 			intnew <- peaks[[i]]$into[match.ref[[i]]$new.idx]
 			intcor <- intnew
 		}
@@ -269,19 +278,19 @@ normalizeSamples <- function(peaks,dbdata,method=c("geom","rlm","both"),
             plot.rtdev(x,y,l=iset,exclude=badrt.ref,output=plottype,
                 fil=file.path(diagplot,
                 paste(diagnames[i],"_DEVIATION.",plottype,sep="")))
-            plot.rvn(aa,bb,lim=cutrat,output=plottype,
-                fil=file.path(diagplot,
-                paste(diagnames[i],"_STANDARDS.",plottype,sep="")))
-            plot.rvn(a[,1],b[,1],aa,bb,lim=cutrat,output=plottype,
-                fil=file.path(diagplot,paste(diagnames[i],"_RAWINT.",
-                plottype,sep="")))
-            plot.rvn(a[,2],b[,2],aa,bb,lim=cutrat,output=plottype,
-                fil=file.path(diagplot,paste(diagnames[i],"_NORMINT.",
-                plottype,sep="")))
-            boxplot.mat(cbind(intref,intnew,intcor),
-                name=c("Reference","Raw","Normalized"),output=plottype,
-                fil=file.path(diagplot,paste(diagnames[i],"_BOXPLOT.",
-                plottype,sep="")))
+            #plot.rvn(aa,bb,lim=cutrat,output=plottype,
+            #    fil=file.path(diagplot,
+            #    paste(diagnames[i],"_STANDARDS.",plottype,sep="")))
+            #plot.rvn(a[,1],b[,1],aa,bb,lim=cutrat,output=plottype,
+            #    fil=file.path(diagplot,paste(diagnames[i],"_RAWINT.",
+            #    plottype,sep="")))
+            #plot.rvn(a[,2],b[,2],aa,bb,lim=cutrat,output=plottype,
+            #    fil=file.path(diagplot,paste(diagnames[i],"_NORMINT.",
+            #    plottype,sep="")))
+            #boxplot.mat(cbind(intref,intnew,intcor),
+            #    name=c("Reference","Raw","Normalized"),output=plottype,
+            #    fil=file.path(diagplot,paste(diagnames[i],"_BOXPLOT.",
+            #    plottype,sep="")))
             
             # Keep plot data for "shiny" app and reproducibility
             plot.data.list[[i]] <- list(
