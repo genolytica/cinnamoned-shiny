@@ -405,7 +405,7 @@ runViewerTabPanelReactive <- function(input,output,session,
     })
     
     handleExportNoNormChooser <- reactive({
-		if (!is.null(runArchive$currentIndex) && is.null(runArchive$norm)) {
+		if (!is.null(runArchive$currentIndex) && is.null(runArchive$noNorm)) {
 			showModal(modalDialog(
 				title="Non-normalized data unavailable!",
 				"Raw intensities for run ",tags$strong(runArchive$runId),
@@ -416,10 +416,13 @@ runViewerTabPanelReactive <- function(input,output,session,
 					modalButton("OK",icon=icon("check"))
 				)
 			))
+			shinyjs::disable("exportNoNormResultsA")
 			return()
 		}
-		else
+		else {
+			shinyjs::disable("exportNoNormResultsA")
 			handleExportNoNormResultsDownloadA()
+		}
 	})
     
     handleExportNoNormResultsDownloadA <- reactive({
@@ -557,12 +560,14 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars) {
                             )
                         ),column(6,
                             div(
-                                class="pull-left",
-                                downloadButton(
-                                    outputId="exportNoNormResultsA",
-                                    label="Download raw results",
-                                    class="btn-semi-black"
-                                )
+                                class="pull-right",
+                                if (!is.null(runArchive$noNorm))
+									downloadButton(
+										outputId="exportNoNormResultsA",
+										label="Download raw results",
+										class="btn-semi-black"
+									)
+                                else div()
                             )
                         ))
                     )),
@@ -688,7 +693,7 @@ runViewerTabPanelRenderUI <- function(output,session,allReactiveVars) {
 }
 
 runViewerTabPanelObserve <- function(input,output,session,allReactiveVars) {
-    # Initialize observing reactive events
+	# Initialize observing reactive events
     runViewerTabPanelReactiveEvents <- 
         runViewerTabPanelEventReactive(input,output,session,allReactiveVars)
 
